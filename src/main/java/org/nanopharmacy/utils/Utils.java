@@ -52,44 +52,46 @@ public class Utils {
      *
      */
     public static final String BD_GENE = "gene";
-    
+
     /**
      * Calcula el valor de relevancia de una publicación médica recuperada con
      * Entrez.
-     * @param text el abstract de la publicación. El texto del abstract de la 
+     *
+     * @param text el abstract de la publicación. El texto del abstract de la
      * publicación o artículo.
-     * @return Un valor entero indicando la relevancia de la publicación. Un valor
-     * 10 indica la mayor relevancia ya que menciona la alteración molecular; 8
-     * si el abstract del artículo no menciona la alteración molecular pero se 
-     * mencionan más de una vertiente. 6 si solo se menciona una vertiente; 2 si
-     * solo se menciona el nombre del gen referido con {@code geneName}; y 0 en 
-     * cualquier caso que no cumple con ninguno de los criterios anterires.
-     * Una vertiente es cualquiera de las siguientes palabras: prognosis, treatment
-     * o cualquier palabra que inicie con predict.
-     */    
+     * @return Un valor entero indicando la relevancia de la publicación. Un
+     * valor 10 indica la mayor relevancia ya que menciona la alteración
+     * molecular; 8 si el abstract del artículo no menciona la alteración
+     * molecular pero se mencionan más de una vertiente. 6 si solo se menciona
+     * una vertiente; 2 si solo se menciona el nombre del gen referido con
+     * {@code geneName}; y 0 en cualquier caso que no cumple con ninguno de los
+     * criterios anterires. Una vertiente es cualquiera de las siguientes
+     * palabras: prognosis, treatment o cualquier palabra que inicie con
+     * predict.
+     */
     public static int getRanking(String text, String geneName, String molecularAlt) {
         int rank = 0;
-        if(text==null || geneName==null || molecularAlt==null) {
+        if (text == null || geneName == null || molecularAlt == null) {
             return 0;
         }
-        
+
         final String content = text.toLowerCase();
-        if(content.contains(geneName)) {
-            rank=2;
+        if (content.contains(geneName)) {
+            rank = 2;
         }
-        if(content.contains("prognosis") || content.contains("treatment") || content.contains("predict")) {
-            rank=6;   
+        if (content.contains("prognosis") || content.contains("treatment") || content.contains("predict")) {
+            rank = 6;
         }
-        if( content.contains("prognosis")&&content.contains("treatment")
-                || content.contains("prognosis")&&content.contains("predict")
-                || content.contains("treatment")&&content.contains("predict")
-                || content.contains("prognosis")&&content.contains("treatment")&&content.contains("predict")) {
-            rank=8;   
+        if (content.contains("prognosis") && content.contains("treatment")
+                || content.contains("prognosis") && content.contains("predict")
+                || content.contains("treatment") && content.contains("predict")
+                || content.contains("prognosis") && content.contains("treatment") && content.contains("predict")) {
+            rank = 8;
         }
-        if(content.contains(molecularAlt)) {
+        if (content.contains(molecularAlt)) {
             rank = 10;
         }
-        
+
         return rank;
     }
 
@@ -155,7 +157,7 @@ public class Utils {
             //Document document = (Document) builder.build(new ByteArrayInputStream(data2));
             return document;
         }
-        
+
         public static String getStringFromInputStream(InputStream is) {
             BufferedReader br = null;
             StringBuilder sb = new StringBuilder();
@@ -163,16 +165,16 @@ public class Utils {
             String line;
             try {
                 br = new BufferedReader(new InputStreamReader(is));
-                while((line = br.readLine()) != null) {
+                while ((line = br.readLine()) != null) {
                     sb.append(line);
                 }
-            }catch(IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace(System.out);
-            }finally {
-                if(br != null) {
+            } finally {
+                if (br != null) {
                     try {
                         br.close();
-                    }catch(IOException e) {
+                    } catch (IOException e) {
                         e.printStackTrace(System.out);
                     }
                 }
@@ -309,110 +311,76 @@ public class Utils {
             return result;
         }
     }
-    
+
     public static class ENG {
-        public static boolean isValidGen(String gen) throws IOException{
+
+        public static boolean isValidObject(String titleDataSource, String prop, String valueProp) throws IOException {
             boolean valid = false;
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
-            SWBDataSource ds = engine.getDataSource("Gene");
+            SWBDataSource ds = engine.getDataSource(titleDataSource);
 
             DataObject query = new DataObject();
             DataObject data = new DataObject();
             query.put("data", data);
-            data.put("symbol", gen);
+            data.put(prop, valueProp);
 
             DataObject obj = ds.fetch(query);
             int i = obj.getDataObject("response").getInt("totalRows");
-            if(i == 0) {
+            if (i == 0) {
                 valid = true;
             }
             return valid;
         }
-        
+
+        public static DataObject getDataProperty(SWBDataSource ds, String property, String valueProp, int valProp) throws IOException {
+            DataObject query = new DataObject();
+            DataObject data = new DataObject();
+
+            query.put("data", data);
+            data.put(property, valueProp != null ? valueProp : valProp);
+            DataObject obj = ds.fetch(query);
+            return obj;
+        }
+
         public static void saveNewArticles(JSONObject publications, String idSearch) throws IOException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
-            //SWBDataSource dsSearch = engine.getDataSource("Search");
+            SWBDataSource dsSearch = engine.getDataSource("Search");
             SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
+            DataObject datObjSearch = dsSearch.fetchObjById(idSearch);
 
             JSONArray arrOutstanding = publications.getJSONArray("outstanding");
-            for (int i = 0; i < arrOutstanding.length()  ; i++) {//
+            int countNewArt = 0;
+            for (int i = 0; i < arrOutstanding.length(); i++) {//
                 JSONObject art = arrOutstanding.getJSONObject(i);
-                
+
                 int pmid = 0, pmc = 0;
-                if(art.has("pmid"))
+                if (art.has("pmid")) {
                     pmid = Integer.parseInt(art.getString("pmid"));
-                if(art.has("pmc"))
+                }
+                if (art.has("pmc")) {
                     pmc = Integer.parseInt(art.getString("pmc"));
+                }
                 int ranking = art.has("ranking") ? art.getInt("ranking") : null;
-                DataObject query = new DataObject();
-                DataObject data = new DataObject();
                 DataObject obj = new DataObject();
                 DataObject dataNewArticle = new DataObject();
                 String idArticle = null;
                 int rows = 0;
-                if(pmid != 0) {
-                    query.put("data", data);
-                    data.put("pmid", pmid);
-                    obj = ds.fetch(query);
+                if (pmid != 0) {
+                    obj = getDataProperty(ds, "pmid", null, pmid);
                     rows = obj.getDataObject("response").getInt("totalRows");
                 }
-                if(rows == 0 && pmc != 0) {
-                    query = new DataObject();
-                    data = new DataObject();
-                    query.put("data", data);
-                    data.put("pmcid", pmc);
-                    obj = ds.fetch(query);
+                if (rows == 0 && pmc != 0) {
+                    obj = getDataProperty(ds, "pmcid", null, pmc);
                     rows = obj.getDataObject("response").getInt("totalRows");
                 }
                 if (rows == 0) {
                     //Guardar el objeto Article
-                    DataObject newArticle = new DataObject();
-                    if(pmid != 0) {
-                        newArticle.put("pmid", pmid);
-                    }
-                    if(pmc != 0) {
-                        newArticle.put("pmcid", pmc);
-                    }
-                    if(art.has("articleTitle")) {
-                        newArticle.put("title", parseTextJson(art.getString("articleTitle")));
-                    }
-                    if(art.has("url")) {
-                        newArticle.put("link", art.getString("url"));
-                    }
-                    if(art.has("reference")) {
-                        newArticle.put("reference", parseTextJson(art.getString("reference")));
-                    }
-                    if(art.has("author")) {
-                        newArticle.put("autor", art.getString("author"));
-                    }
-                    if(art.has("prognosis")) {
-                        newArticle.put("prognosis", art.getInt("prognosis"));
-                    }
-                    if(art.has("prediction")) {
-                        newArticle.put("prediction", art.getInt("prediction"));
-                    }
-                    if(art.has("treatment")) {
-                        newArticle.put("treatment", art.getInt("treatment"));
-                    }
-
-                    StringBuilder sbf = new StringBuilder();
-                    JSONArray abstractTxt = art.getJSONArray("abstract");
-                    for (int j = 0; j < abstractTxt.length(); j++) {
-                        JSONObject abstTxt = abstractTxt.getJSONObject(j);
-                        sbf.append(abstTxt.getString("label"));
-                        sbf.append(parseTextJson(abstTxt.getString("text")));
-                    }
-                    if(sbf.length() > 0) {
-                        newArticle.put("abstract", parseTextJson(sbf.toString()));
-                    }
-                    dataNewArticle = ds.addObj(newArticle);
+                    dataNewArticle = setPropArticle(ds, art, pmid, pmc);
                     idArticle = dataNewArticle.getDataObject("response").getDataObject("data").getString("_id");
-                    
                 } else {
                     dataNewArticle = obj;
-                   idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
-                   
+                    idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
                 }
                 DataObject newArtSearch = new DataObject();
                 newArtSearch.put("search", idSearch);
@@ -420,25 +388,172 @@ public class Utils {
                 newArtSearch.put("ranking", ranking);
                 newArtSearch.put("status", 1);
                 dsArtSearch.addObj(newArtSearch);
+                countNewArt++;
+            }
+            datObjSearch.put("notification", countNewArt);
+        }
+
+        public static void saveUpdateArticles(JSONObject publications, String idSearch) throws IOException {
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBDataSource ds = engine.getDataSource("Article");
+            SWBDataSource dsSearch = engine.getDataSource("Search");
+            SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
+            DataObject datObjSearch = dsSearch.fetchObjById(idSearch);//Es la busqueda
+
+            JSONArray arrOutstanding = publications.getJSONArray("outstanding");
+            int countNewArt = 0;
+            int countRecommended = 0;
+            for (int i = 0; i < arrOutstanding.length(); i++) {//
+                JSONObject art = arrOutstanding.getJSONObject(i);
+
+                int pmid = 0, pmc = 0;
+                if (art.has("pmid")) {
+                    pmid = Integer.parseInt(art.getString("pmid"));
+                }
+                if (art.has("pmc")) {
+                    pmc = Integer.parseInt(art.getString("pmc"));
+                }
+                int ranking = art.has("ranking") ? art.getInt("ranking") : null;
+                DataObject obj = new DataObject();
+                DataObject dataNewArticle = new DataObject();
+                String idArticle = null;
+                int status = 0;
+                int rows = 0;
+                //Revisa que el articulo ya este dado de alta en la BD
+                if (pmid != 0) {
+                    obj = getDataProperty(ds, "pmid", null, pmid);
+                    rows = obj.getDataObject("response").getInt("totalRows");
+                }
+                if (rows == 0 && pmc != 0) {
+                    obj = getDataProperty(ds, "pmcid", null, pmc);
+                    rows = obj.getDataObject("response").getInt("totalRows");
+                }
+
+                if (rows == 0) {
+                    //Guardar el objeto Article
+                    dataNewArticle = setPropArticle(ds, art, pmid, pmc);
+                    idArticle = dataNewArticle.getDataObject("response").getDataObject("data").getString("_id");
+                    status = 1;
+                    countNewArt++;
+                } else {
+                    //si ya existe
+                    dataNewArticle = obj;
+                    idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
+
+                    DataObject obj1 = getDataProperty(dsArtSearch, "article", idArticle, 0);
+                    rows = obj1.getDataObject("response").getInt("totalRows");
+                    int datRanking = obj1.getDataObject("response").getDataList("data").getDataObject(0).getInt("ranking");
+                    int datStatus = obj1.getDataObject("response").getDataList("data").getDataObject(0).getInt("status");
+
+                    if (datStatus == 1) {
+                        countNewArt++;
+                    } else if (datRanking > 5) {
+                        countRecommended++;
+                    }
+                    if (rows != 0) {
+                        continue;
+                    }
+                }
+                DataObject newArtSearch = new DataObject();
+                newArtSearch.put("search", idSearch);
+                newArtSearch.put("article", idArticle);
+                newArtSearch.put("ranking", ranking);
+                newArtSearch.put("status", status);
+                dsArtSearch.addObj(newArtSearch);
+
+            }
+            datObjSearch.put("notification", countNewArt);
+            datObjSearch.put("recommended", countRecommended);
+            dsSearch.updateObj(datObjSearch);
+        }
+
+        private static DataObject setPropArticle(SWBDataSource ds, JSONObject art, int pmid, int pmc) throws IOException {
+            DataObject newArticle = new DataObject();
+            DataObject dataNewArticle = new DataObject();
+            if (pmid != 0) {
+                newArticle.put("pmid", pmid);
+            }
+            if (pmc != 0) {
+                newArticle.put("pmcid", pmc);
+            }
+            if (art.has("articleTitle")) {
+                newArticle.put("title", parseTextJson(art.getString("articleTitle")));
+            }
+            if (art.has("url")) {
+                newArticle.put("link", art.getString("url"));
+            }
+            if (art.has("reference")) {
+                newArticle.put("reference", parseTextJson(art.getString("reference")));
+            }
+            if (art.has("author")) {
+                newArticle.put("autor", art.getString("author"));
+            }
+            if (art.has("prognosis")) {
+                newArticle.put("prognosis", art.getInt("prognosis"));
+            }
+            if (art.has("prediction")) {
+                newArticle.put("prediction", art.getInt("prediction"));
+            }
+            if (art.has("treatment")) {
+                newArticle.put("treatment", art.getInt("treatment"));
             }
 
-            
+            StringBuilder sbf = new StringBuilder();
+            JSONArray abstractTxt = art.getJSONArray("abstract");
+            for (int j = 0; j < abstractTxt.length(); j++) {
+                JSONObject abstTxt = abstractTxt.getJSONObject(j);
+                sbf.append(abstTxt.getString("label"));
+                sbf.append(parseTextJson(abstTxt.getString("text")));
+            }
+            if (sbf.length() > 0) {
+                newArticle.put("abstract", parseTextJson(sbf.toString()));
+            }
+            dataNewArticle = ds.addObj(newArticle);
+            return dataNewArticle;
+        }
+
+        public static DataObject setNewDisease(String idGene, String title, String definition, String conceptId) throws IOException {
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBDataSource ds = engine.getDataSource("CancerType");
+            SWBDataSource dsGeneCancer = engine.getDataSource("Gene_Cancer");
+            DataObject newDisease = getDataProperty(ds, "conceptId", conceptId, 0);
+            int rows = newDisease.getDataObject("response").getInt("totalRows");
+            String idDisease = null;
+            if (rows == 0) {
+                newDisease = new DataObject();
+                newDisease.put("name", title);
+                newDisease.put("summary", definition);
+                newDisease.put("conceptId", conceptId);
+                newDisease = ds.addObj(newDisease);
+                idDisease = newDisease.getDataObject("response").getDataObject("data").getString("_id");
+                //Gene_Cancer
+                //newDisease.put("lastUpdate", ds);
+                //ds.addObj({name:title, summary:definition, conceptId:conceptId});
+            } else {
+                idDisease = newDisease.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
+            }
+            DataObject newGeneCancer = new DataObject();
+            newGeneCancer.put("gene", idGene);
+            newGeneCancer.put("cancer", idDisease);
+
+            dsGeneCancer.addObj(newGeneCancer);
+            return newDisease;
         }
     }
-    
+
     private static String parseTextJson(String txt) {
         //if(txt.contains("\"")){
-            txt = txt.replaceAll("\"", "&quot;");
-            txt = txt.replaceAll('\u0022' +"", "&quot;");
-            txt = txt.replaceAll('\u201c' +"", "&quot;");
-            txt = txt.replaceAll('\u201d' +"", "&quot;");
-            //txt = txt.replaceAll('\u201e' +"", "\\\"");
-            txt = txt.replaceAll('\u201f' +"", "&quot;");
-            txt = txt.replaceAll('\u275d' +"", "&quot;");
-            txt = txt.replaceAll('\u275e' +"", "&quot;");
-            txt = txt.replaceAll('\u301d' +"", "&quot;");
-            txt = txt.replaceAll('\u301e' +"", "&quot;");
-            txt = txt.replaceAll('\uff02' +"", "&quot;");
+        txt = txt.replaceAll("\"", "&quot;");
+        txt = txt.replaceAll('\u0022' + "", "&quot;");
+        txt = txt.replaceAll('\u201c' + "", "&quot;");
+        txt = txt.replaceAll('\u201d' + "", "&quot;");
+        //txt = txt.replaceAll('\u201e' +"", "\\\"");
+        txt = txt.replaceAll('\u201f' + "", "&quot;");
+        txt = txt.replaceAll('\u275d' + "", "&quot;");
+        txt = txt.replaceAll('\u275e' + "", "&quot;");
+        txt = txt.replaceAll('\u301d' + "", "&quot;");
+        txt = txt.replaceAll('\u301e' + "", "&quot;");
+        txt = txt.replaceAll('\uff02' + "", "&quot;");
         //}
         return txt;
     }

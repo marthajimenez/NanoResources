@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -281,9 +282,17 @@ public class ESearchImpl {
             List<Element> docSumList = docSumSet.getChildren("DocumentSummary");
             for(Element docSum : docSumList) {
                 alteration = new JSONObject();
+                /*List itChilds = docSum.getChildren();
+                Iterator itChilds1 = itChilds.iterator();
+                System.out.println("------------------------");
+                while (itChilds1.hasNext()) {
+                    Object next = itChilds1.next();
+                    System.out.println("child: " + next.toString());
+                }*/
                 try {
                     alteration.put("title", docSum.getChildText("Title"));
                     alteration.put("definition", docSum.getChildText("Definition"));
+                    alteration.put("conceptId", docSum.getChildText("ConceptId"));
                     diseases.put(alteration);
                 }catch(JSONException jse) {
                     Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
