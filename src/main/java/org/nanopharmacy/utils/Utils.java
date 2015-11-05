@@ -24,6 +24,8 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import static org.nanopharmacy.utils.Utils.XML.getXML;
+import org.semanticwb.datamanager.DataList;
 import org.semanticwb.datamanager.DataMgr;
 import org.semanticwb.datamanager.DataObject;
 import org.semanticwb.datamanager.SWBDataSource;
@@ -436,21 +438,41 @@ public class Utils {
                     status = 1;
                     countNewArt++;
                 } else {
-                    //si ya existe
+                    //si ya existe el articulo
                     dataNewArticle = obj;
                     idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
 
                     DataObject obj1 = getDataProperty(dsArtSearch, "article", idArticle, 0);
                     rows = obj1.getDataObject("response").getInt("totalRows");
-                    int datRanking = obj1.getDataObject("response").getDataList("data").getDataObject(0).getInt("ranking");
-                    int datStatus = obj1.getDataObject("response").getDataList("data").getDataObject(0).getInt("status");
+                    int datRanking = 0, datStatus = 0;
+                    boolean isValid = true;
 
-                    if (datStatus == 1) {
-                        countNewArt++;
-                    } else if (datRanking > 5) {
-                        countRecommended++;
+                    if (rows > 0) {
+                        //System.out.println("obj1: " + obj1);
+                        DataList list = obj1.getDataObject("response").getDataList("data");
+                        for (int j = 0; j < list.size(); j++) {
+                            DataObject articleList = list.getDataObject(j);
+                            if (articleList.getString("search") != null && articleList.getString("search").equals(idSearch)) {
+                                if (articleList.containsKey("ranking")) {
+                                    datRanking = articleList.getInt("ranking");
+                                }
+                                if (articleList.containsKey("status")) {
+                                    datStatus = articleList.getInt("status");
+                                }
+                                isValid = false;
+                                break;
+                            }
+                        }
+
+                        if (datStatus == 1) {
+                            countNewArt++;
+                        } else if (datRanking > 5) {
+                            countRecommended++;
+                        }
                     }
-                    if (rows != 0) {
+                    //System.out.println("isValid: " + isValid);
+                    //Compara que el articulo y la busqueda sean el mismo registro
+                    if (!isValid) {
                         continue;
                     }
                 }
@@ -512,49 +534,213 @@ public class Utils {
             return dataNewArticle;
         }
 
-        public static DataObject setNewDisease(String idGene, String title, String definition, String conceptId) throws IOException {
+        public static void setNewDisease(JSONArray arrayDiseases, String idGene) throws IOException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("CancerType");
             SWBDataSource dsGeneCancer = engine.getDataSource("Gene_Cancer");
-            DataObject newDisease = getDataProperty(ds, "conceptId", conceptId, 0);
-            int rows = newDisease.getDataObject("response").getInt("totalRows");
-            String idDisease = null;
-            if (rows == 0) {
-                newDisease = new DataObject();
-                newDisease.put("name", title);
-                newDisease.put("summary", definition);
-                newDisease.put("conceptId", conceptId);
-                newDisease = ds.addObj(newDisease);
-                idDisease = newDisease.getDataObject("response").getDataObject("data").getString("_id");
-                //Gene_Cancer
-                //newDisease.put("lastUpdate", ds);
-                //ds.addObj({name:title, summary:definition, conceptId:conceptId});
-            } else {
-                idDisease = newDisease.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
+
+            for (int i = 0; i < arrayDiseases.length(); i++) {
+                JSONObject obj = arrayDiseases.getJSONObject(i);
+                String title = "";
+                String definition = "";
+                String conceptId = "";
+                if (obj.has("title")) {
+                    title = obj.getString("title");
+                }
+                if (obj.has("definition")) {
+                    definition = obj.getString("definition");
+                }
+                if (obj.has("conceptId")) {
+                    conceptId = obj.getString("conceptId");
+                }
+
+                if (conceptId != null && !conceptId.isEmpty()) {
+                    DataObject newDisease = getDataProperty(ds, "conceptId", conceptId, 0);
+                    int rows = newDisease.getDataObject("response").getInt("totalRows");
+                    String idDisease = null;
+                    if (rows == 0) {
+                        newDisease = new DataObject();
+                        newDisease.put("name", title);
+                        newDisease.put("summary", definition);
+                        newDisease.put("conceptId", conceptId);
+                        newDisease = ds.addObj(newDisease);
+                        idDisease = newDisease.getDataObject("response").getDataObject("data").getString("_id");
+                    } else {
+                        idDisease = newDisease.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
+                    }
+                    DataObject newGeneCancer = new DataObject();
+                    newGeneCancer.put("gene", idGene);
+                    newGeneCancer.put("cancer", idDisease);
+                    dsGeneCancer.addObj(newGeneCancer);
+                }
             }
-            DataObject newGeneCancer = new DataObject();
-            newGeneCancer.put("gene", idGene);
-            newGeneCancer.put("cancer", idDisease);
-
-            dsGeneCancer.addObj(newGeneCancer);
-            return newDisease;
         }
-    }
 
-    private static String parseTextJson(String txt) {
-        //if(txt.contains("\"")){
-        txt = txt.replaceAll("\"", "&quot;");
-        txt = txt.replaceAll('\u0022' + "", "&quot;");
-        txt = txt.replaceAll('\u201c' + "", "&quot;");
-        txt = txt.replaceAll('\u201d' + "", "&quot;");
-        //txt = txt.replaceAll('\u201e' +"", "\\\"");
-        txt = txt.replaceAll('\u201f' + "", "&quot;");
-        txt = txt.replaceAll('\u275d' + "", "&quot;");
-        txt = txt.replaceAll('\u275e' + "", "&quot;");
-        txt = txt.replaceAll('\u301d' + "", "&quot;");
-        txt = txt.replaceAll('\u301e' + "", "&quot;");
-        txt = txt.replaceAll('\uff02' + "", "&quot;");
-        //}
-        return txt;
+        public static void setUpdateDisease(JSONArray arrayDiseases, String idGene) throws IOException {
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBDataSource ds = engine.getDataSource("CancerType");
+            SWBDataSource dsGeneCancer = engine.getDataSource("Gene_Cancer");
+
+            for (int i = 0; i < arrayDiseases.length(); i++) {
+                JSONObject obj = arrayDiseases.getJSONObject(i);
+                String title = "";
+                String definition = "";
+                String conceptId = "";
+                if (obj.has("title")) {
+                    title = obj.getString("title");
+                }
+                if (obj.has("definition")) {
+                    definition = obj.getString("definition");
+                }
+                if (obj.has("conceptId")) {
+                    conceptId = obj.getString("conceptId");
+                }
+
+                if (conceptId != null && !conceptId.isEmpty()) {
+                    DataObject newDisease = getDataProperty(ds, "conceptId", conceptId, 0);
+                    int rows = newDisease.getDataObject("response").getInt("totalRows");
+                    String idDisease = null;
+                    if (rows == 0) {
+                        newDisease = new DataObject();
+                        newDisease.put("name", title);
+                        newDisease.put("summary", definition);
+                        newDisease.put("conceptId", conceptId);
+                        newDisease = ds.addObj(newDisease);
+                        idDisease = newDisease.getDataObject("response").getDataObject("data").getString("_id");
+                    } else {
+                        idDisease = newDisease.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
+
+                        DataObject obj1 = getDataProperty(dsGeneCancer, "cancer", idDisease, 0);
+                        rows = obj1.getDataObject("response").getInt("totalRows");
+                        boolean isValid = true;
+
+                        if (rows > 0) {
+                            DataList list = obj1.getDataObject("response").getDataList("data");
+                            for (int j = 0; j < list.size(); j++) {
+                                DataObject cancerList = list.getDataObject(j);
+                                if (cancerList.getString("gene") != null && cancerList.getString("gene").equals(idGene)) {
+                                    isValid = false;
+                                    break;
+                                }
+                            }
+                        }
+                        //Compara que el cancer y gen sean el mismo registro
+                        if (!isValid) {
+                            continue;
+                        }
+                    }
+                    DataObject newGeneCancer = new DataObject();
+                    newGeneCancer.put("gene", idGene);
+                    newGeneCancer.put("cancer", idDisease);
+                    dsGeneCancer.addObj(newGeneCancer);
+                }
+            }
+        }
+
+        private static String parseTextJson(String txt) {
+            //if(txt.contains("\"")){
+            txt = txt.replaceAll("\"", "&quot;");
+            txt = txt.replaceAll('\u0022' + "", "&quot;");
+            txt = txt.replaceAll('\u201c' + "", "&quot;");
+            txt = txt.replaceAll('\u201d' + "", "&quot;");
+            //txt = txt.replaceAll('\u201e' +"", "\\\"");
+            txt = txt.replaceAll('\u201f' + "", "&quot;");
+            txt = txt.replaceAll('\u275d' + "", "&quot;");
+            txt = txt.replaceAll('\u275e' + "", "&quot;");
+            txt = txt.replaceAll('\u301d' + "", "&quot;");
+            txt = txt.replaceAll('\u301e' + "", "&quot;");
+            txt = txt.replaceAll('\uff02' + "", "&quot;");
+            //}
+            return txt;
+        }
+
+        /*public static boolean getGeneDom(final String geneName)
+                throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
+            Element res = null;
+            boolean isValid = false;
+            Document doc;
+            URL cmd;
+            String spec;
+            HttpURLConnection conex;
+            spec = CMD_ESearch.replaceFirst(Token_DbNAME, Db_GENE);
+            spec = spec.replaceFirst(Token_GENE, geneName);
+            cmd = new URL(spec);
+            conex = (HttpURLConnection) cmd.openConnection();
+            conex.setConnectTimeout(30000);
+            conex.setReadTimeout(60000);
+            conex.setRequestMethod("GET");
+            conex.setDoOutput(true);
+            conex.connect();
+            try {
+                InputStream in = conex.getInputStream();
+                doc = getXML(in);
+            } catch (JDOMException jde) {
+                doc = null;
+            } finally {
+                conex.disconnect();
+            }
+
+            if (doc != null) {
+                Element elem;
+                XPath lXPath;
+                String qryKey, webEnv;
+                try {
+                    lXPath = XPath.newInstance(Elem_SrhRES + "/" + Elem_QryKEY);
+                    elem = (Element) lXPath.selectSingleNode(doc);
+                    if (elem == null) {
+                        throw new UseHistoryException("no se encontraron los datos para el parametro de consulta: queryKey");
+                    }
+                    qryKey = elem.getValue();
+                    lXPath = XPath.newInstance(Elem_SrhRES + "/" + Elem_WebENV);
+                    elem = (Element) lXPath.selectSingleNode(doc);
+                    if (elem == null) {
+                        throw new UseHistoryException("no se encontraron los datos para el parametro de consulta: WebEnv");
+                    }
+                    webEnv = elem.getValue();
+                } catch (JDOMException jde) {
+                    qryKey = null;
+                    webEnv = null;
+                }
+
+                if (qryKey == null || webEnv == null) {
+                    throw new UseHistoryException("entrez tal vez no reconocio la consulta, por lo que no devolvio queryKey ni WebEnv");
+                }
+                spec = CMD_ESummary.replaceFirst(Token_DbNAME, Db_GENE);
+                spec = spec.replaceFirst(Token_QryKEY, qryKey);
+                spec = spec.replaceFirst(Token_WebENV, webEnv);
+                cmd = new URL(spec);
+                conex = (HttpURLConnection) cmd.openConnection();
+                conex.setConnectTimeout(30000);
+                conex.setReadTimeout(60000);
+                conex.setRequestMethod("GET");
+                conex.setDoOutput(true);
+                conex.connect();
+                try {
+                    InputStream in = conex.getInputStream();
+                    doc = getXML(in);
+                } catch (JDOMException jde) {
+                    doc = null;
+                } finally {
+                    conex.disconnect();
+                }
+
+                if (doc != null) {
+                    try {
+                        lXPath = XPath.newInstance("//" + Elem_DocSummary + "[" + Elem_NAME + "=\"" + geneName + "\" and " + Elem_ORGANISM + "/" + Elem_SciNAME + "=\"" + Val_HomoSapiens + "\"]");
+                        res = (Element) lXPath.selectSingleNode(doc);
+//                    if( res==null ) {
+//                        throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre "+geneName+" y organismo Homo sapiens");
+//                    }
+                    } catch (JDOMException jde) {
+                        throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
+                    }
+                } // if esummary
+            } // if esearch
+            if (res != null) {
+                isValid = true;
+            }
+            return isValid;
+        }*/
+
     }
 }
