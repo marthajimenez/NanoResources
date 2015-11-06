@@ -17,7 +17,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import org.jdom.Document;
 import org.jdom.JDOMException;
@@ -54,6 +57,14 @@ public class Utils {
      *
      */
     public static final String BD_GENE = "gene";
+    
+        /**
+     * Specifies a default language to use.
+     * <p>
+     * Especifica un lenguaje a usar por defecto.</p>
+     */
+    private static Locale locale = Locale.ENGLISH;
+
 
     /**
      * Calcula el valor de relevancia de una publicación médica recuperada con
@@ -741,6 +752,121 @@ public class Utils {
             }
             return isValid;
         }*/
+
+    }
+    public static class TEXT
+    {
+                /**
+         * Obtains the month's name corresponding to the number received
+         * specifying the month of the year. The first month of the year is
+         * January and its corresponding number is zero.
+         * <p>
+         * Obtiene el nombre del mes correspondiente al n&uacute;mero recibido
+         * especificando el mes del a&ntilde;o. El primer mes del a&ntilde;o es
+         * Enero y le corresponde el n&uacute;mero cero.</p>
+         *
+         * @param month the number of the month of the year
+         * @param lang a string representing a language for obtaining the
+         * corresponding name
+         * @return a string representing the name of the month specified.
+         *
+         */
+        public static String getStrMonth(int month, String lang)
+        {
+            if (lang != null)
+            {
+                return getLocaleString("locale_date", "month_" + month, new Locale(lang));
+            }
+            else
+            {
+                return getLocaleString("locale_date", "month_" + month);
+            }
+        }
+                /**
+         * Gets the value for a {@code key} in the specified {@code Bundle} with
+         * the default {@code locale}.
+         * <p>
+         * Obtiene el valor correspondiente al {@code key} especificado con el
+         * objeto {@code locale} utilizado por defecto.</p>
+         *
+         * @param Bundle a string specifying the bundle that contains the data
+         * to retrieve
+         * @param key a string indicating the key name whose value is required
+         * @return a string representing the specified {@code key}'s value
+         * stored in {@code Bundle}. un objeto string que representa el valor
+         * del elemento {@code key} especificado almacenado en {@code Bundle}.
+         */
+        public static String getLocaleString(String Bundle, String key)
+        {
+            return getLocaleString(Bundle, key, Utils.locale);
+        }
+
+        /**
+         * Gets the value for a {@code key} in the specified {@code Bundle} with
+         * the indicated {@code locale}.
+         * <p>
+         * Obtiene el valor correspondiente al {@code key} especificado con el
+         * objeto {@code locale} indicado.</p>
+         *
+         * @param Bundle a string specifying the bundle that contains the data
+         * to retrieve
+         * @param key a string indicating the key name whose value is required
+         * @param locale the locale that will be used to retrieve the
+         * {@code key} specified
+         * @return a string representing the specified {@code key}'s value
+         * stored in {@code Bundle} in the language indicated by {@code locale}.
+         * un objeto string que representa el valor del elemento {@code key}
+         * especificado almacenado en {@code Bundle}.
+         */
+        public static String getLocaleString(String Bundle, String key, Locale locale)
+        {
+            return getLocaleString(Bundle, key, locale, null);
+        }
+
+        /**
+         * Gets the value for a {@code key} in the specified {@code Bundle} with
+         * the indicated {@code locale} and class loader.
+         * <p>
+         * Obtiene el valor correspondiente al {@code key} especificado con los
+         * objetos {@code locale} y {@code loader} indicados.</p>
+         *
+         * @param Bundle a string specifying the bundle that contains the data
+         * to retrieve
+         * @param key a string indicating the key name whose value is required
+         * @param locale the locale that will be used to retrieve the
+         * {@code key} specified
+         * @param loader the class loader from which the resource bundle is
+         * loaded
+         * @return a string representing the specified {@code key}'s value
+         * stored in {@code Bundle} in the language indicated by {@code locale}.
+         * un objeto string que representa el valor del elemento {@code key}
+         * especificado almacenado en {@code Bundle}.
+         */
+        public static String getLocaleString(String Bundle, String key,
+                Locale locale, ClassLoader loader)
+        {
+
+            String cad = "";
+            try
+            {
+                if (loader == null)
+                {
+                    cad = java.util.ResourceBundle.getBundle(Bundle, locale).getString(key);
+                }
+                else
+                {
+                    cad = java.util.ResourceBundle.getBundle(Bundle, locale, loader).getString(key);
+                }
+                //System.out.println("cad:" + cad);
+            }
+            catch (Exception e)
+            {
+                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, "Error while looking for properties key:{0} in {1}", new Object[]{key, Bundle});
+                //SWBUtils.log.error("Error while looking for properties key:" + key + " in " + Bundle);
+                return "";
+            }
+            return cad;
+        }
 
     }
 }
