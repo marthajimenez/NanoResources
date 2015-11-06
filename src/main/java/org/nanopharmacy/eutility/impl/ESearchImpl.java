@@ -98,6 +98,8 @@ public class ESearchImpl {
     public static final String CMD_EFetch = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=" + Token_DbNAME + "&query_key=" + Token_QryKEY + "&WebEnv=" + Token_WebENV + "&retmode=xml&retstart=" + Token_RetStart + "&retmax=" + Token_RetMax;
     public static final String Url_NBCI = "http://www.ncbi.nlm.nih.gov/";
 
+    public static final String CMD_ESearchGene = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" + Token_DbNAME + "&term=((" + Token_GENE + "%5BGene%5D)%20AND%20homo%20sapiens%5BOrganism%5D)%20AND%20alive%5Bprop%5D&retmode=xml";
+
     /**
      * Toma la url CMD_ESearchP y remplaza los tokens <code>Token_LY</code>,
      * <code>Token_LM</code>, <code>Token_LD</code>, <code>Token_UY</code>,
@@ -1306,4 +1308,59 @@ public class ESearchImpl {
         }
         return values;
     }
+    
+    /**
+     * 
+     * @param geneName
+     * @return
+     * @throws NoDataException
+     * @throws UseHistoryException
+     * @throws MalformedURLException
+     * @throws ProtocolException
+     * @throws IOException 
+     */
+     public boolean hasGeneBD(final String geneName)
+            throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
+        boolean isValid = false;
+        Document doc;
+        URL cmd;
+        String spec;
+        HttpURLConnection conex;
+        spec = CMD_ESearchGene.replaceFirst(Token_DbNAME, Db_GENE);
+        spec = spec.replaceFirst(Token_GENE, geneName);
+        cmd = new URL(spec);
+        conex = (HttpURLConnection) cmd.openConnection();
+        conex.setConnectTimeout(30000);
+        conex.setReadTimeout(60000);
+        conex.setRequestMethod("GET");
+        conex.setDoOutput(true);
+        conex.connect();
+        try {
+            InputStream in = conex.getInputStream();
+            doc = getXML(in);
+        } catch (JDOMException jde) {
+            doc = null;
+        } finally {
+            conex.disconnect();
+        }
+
+        if (doc != null) {
+            Element elem;
+            XPath lXPath;
+            String qryKey;
+            try {
+                lXPath = XPath.newInstance(Elem_SrhRES + "/Count");
+                elem = (Element) lXPath.selectSingleNode(doc);
+                if (elem != null) {
+                    qryKey = elem.getValue();
+                    if(Integer.parseInt(qryKey) > 0) {
+                        isValid = true;
+                    }
+                }
+            } catch (JDOMException jde) {
+            }
+        } 
+        return isValid;
+    }
+
 }
