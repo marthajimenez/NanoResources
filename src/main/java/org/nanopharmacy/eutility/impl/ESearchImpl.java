@@ -1196,7 +1196,7 @@ public class ESearchImpl {
 
                         if (month != null) {
                             try {
-                                r.append(Utils.TEXT.getStrMonth(Integer.parseInt(month) - 1, Locale.US.getLanguage()).substring(0, 3));
+                                r.append(Utils.Months[Integer.parseInt(month)]);
                             } catch (Exception e) {
                             }
                         }

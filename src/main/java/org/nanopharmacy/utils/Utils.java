@@ -27,7 +27,7 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import static org.nanopharmacy.utils.Utils.XML.getXML;
+import org.nanopharmacy.utils.Utils.BD;
 import org.semanticwb.datamanager.DataList;
 import org.semanticwb.datamanager.DataMgr;
 import org.semanticwb.datamanager.DataObject;
@@ -123,6 +123,22 @@ public class Utils {
             return super.toString(); //To change body of generated methods, choose Tools | Templates.
         }
     }
+    
+    public static String [] Months = { "Jan","Feb","Mar","Apr","May","Jun","Jul","Agu","Sep","Oct", "Nov", "Dec"};
+//    public enum Months {
+//        JAN("Jan"), FEB("Feb"), MAR("Mar"), APR("Apr"), MAY("May"), JUN("Jun"), JUL("Jul"), AGU("Agu"), SEP("Sep"), OCT("Oct"), NOV("Nov"), DEC("Dec");
+//        
+//        
+//        Months(String val) {
+//            this.name = val;
+//            
+//        }
+//        private String name;
+//        
+//        public String getName(){
+//            return name;
+//        }
+//    }
 
     /**
      *
@@ -771,7 +787,7 @@ public class Utils {
          * @return a string representing the name of the month specified.
          *
          */
-        public static String getStrMonth(int month, String lang)
+        /*public static String getStrMonth(int month, String lang)
         {
             if (lang != null)
             {
@@ -781,7 +797,7 @@ public class Utils {
             {
                 return getLocaleString("locale_date", "month_" + month);
             }
-        }
+        }*/
                 /**
          * Gets the value for a {@code key} in the specified {@code Bundle} with
          * the default {@code locale}.
