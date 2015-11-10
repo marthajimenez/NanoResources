@@ -15,7 +15,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -57,14 +59,13 @@ public class Utils {
      *
      */
     public static final String BD_GENE = "gene";
-    
-        /**
+
+    /**
      * Specifies a default language to use.
      * <p>
      * Especifica un lenguaje a usar por defecto.</p>
      */
     private static Locale locale = Locale.ENGLISH;
-
 
     /**
      * Calcula el valor de relevancia de una publicación médica recuperada con
@@ -123,9 +124,8 @@ public class Utils {
             return super.toString(); //To change body of generated methods, choose Tools | Templates.
         }
     }
-    
-    public static String [] Months = { "Jan","Feb","Mar","Apr","May","Jun","Jul","Agu","Sep","Oct", "Nov", "Dec"};
 
+    public static String[] Months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Agu", "Sep", "Oct", "Nov", "Dec"};
 
     /**
      *
@@ -330,7 +330,9 @@ public class Utils {
 
     public static class ENG {
 
-        public static boolean isValidObject(String titleDataSource, String prop, String valueProp) throws IOException {
+        public static boolean isValidObject(String titleDataSource, String[] namesString, String[] values,
+                String[] namesInt, int[] valuesInt)
+                throws IOException {
             boolean valid = false;
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource(titleDataSource);
@@ -338,7 +340,16 @@ public class Utils {
             DataObject query = new DataObject();
             DataObject data = new DataObject();
             query.put("data", data);
-            data.put(prop, valueProp);
+            if (namesString != null) {
+                for (int i = 0; i < namesString.length; i++) {
+                    data.put(namesString[i], values[i]);
+                }
+            }
+            if (namesInt != null) {
+                for (int i = 0; i < namesInt.length; i++) {
+                    data.put(namesInt[i], valuesInt[i]);
+                }
+            }
 
             DataObject obj = ds.fetch(query);
             int i = obj.getDataObject("response").getInt("totalRows");
@@ -346,6 +357,30 @@ public class Utils {
                 valid = true;
             }
             return valid;
+        }
+
+        public static String getIdProperty(String dataSource, String property, String valueProp) throws IOException {
+            String ret = null;
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBDataSource ds = engine.getDataSource(dataSource);
+            DataObject obj = getDataProperty(ds, property, valueProp, 0);
+            if (obj != null) {
+                int rows = obj.getDataObject("response").getInt("totalRows");
+                if (rows != 0) {
+                    DataList list = obj.getDataObject("response").getDataList("data");
+                    for (int j = 0; j < list.size(); j++) {
+                        DataObject genList = list.getDataObject(j);
+                        if (genList.getString(property) != null && genList.getString(property).equals(valueProp)) {
+                            if (genList.containsKey("_id")) {
+                                ret = genList.getString("_id");
+                            }
+                            break;
+                        }
+                    }
+
+                }
+            }
+            return ret;
         }
 
         public static DataObject getDataProperty(SWBDataSource ds, String property, String valueProp, int valProp) throws IOException {
@@ -403,10 +438,17 @@ public class Utils {
                 newArtSearch.put("article", idArticle);
                 newArtSearch.put("ranking", ranking);
                 newArtSearch.put("status", 1);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                String date = sdf.format(new Date());
+                newArtSearch.put("lastUpdate", date);
                 dsArtSearch.addObj(newArtSearch);
                 countNewArt++;
             }
             datObjSearch.put("notification", countNewArt);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String date = sdf.format(new Date());
+            datObjSearch.put("lastUpdate", date);
+            dsSearch.updateObj(datObjSearch);
         }
 
         public static void saveUpdateArticles(JSONObject publications, String idSearch) throws IOException {
@@ -462,7 +504,6 @@ public class Utils {
                     boolean isValid = true;
 
                     if (rows > 0) {
-                        //System.out.println("obj1: " + obj1);
                         DataList list = obj1.getDataObject("response").getDataList("data");
                         for (int j = 0; j < list.size(); j++) {
                             DataObject articleList = list.getDataObject(j);
@@ -484,7 +525,6 @@ public class Utils {
                             countRecommended++;
                         }
                     }
-                    //System.out.println("isValid: " + isValid);
                     //Compara que el articulo y la busqueda sean el mismo registro
                     if (!isValid) {
                         continue;
@@ -495,11 +535,17 @@ public class Utils {
                 newArtSearch.put("article", idArticle);
                 newArtSearch.put("ranking", ranking);
                 newArtSearch.put("status", status);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                String date = sdf.format(new Date());
+                newArtSearch.put("lastUpdate", date);
                 dsArtSearch.addObj(newArtSearch);
 
             }
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String date = sdf.format(new Date());
+            datObjSearch.put("lastUpdate", date);
             dsSearch.updateObj(datObjSearch);
         }
 
@@ -544,6 +590,9 @@ public class Utils {
             if (sbf.length() > 0) {
                 newArticle.put("abstract", parseTextJson(sbf.toString()));
             }
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String date = sdf.format(new Date());
+            newArticle.put("lastUpdate", date);
             dataNewArticle = ds.addObj(newArticle);
             return dataNewArticle;
         }
@@ -577,6 +626,9 @@ public class Utils {
                         newDisease.put("name", title);
                         newDisease.put("summary", definition);
                         newDisease.put("conceptId", conceptId);
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                        String date = sdf.format(new Date());
+                        newDisease.put("lastUpdate", date);
                         newDisease = ds.addObj(newDisease);
                         idDisease = newDisease.getDataObject("response").getDataObject("data").getString("_id");
                     } else {
@@ -619,6 +671,9 @@ public class Utils {
                         newDisease.put("name", title);
                         newDisease.put("summary", definition);
                         newDisease.put("conceptId", conceptId);
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                        String date = sdf.format(new Date());
+                        newDisease.put("lastUpdate", date);
                         newDisease = ds.addObj(newDisease);
                         idDisease = newDisease.getDataObject("response").getDataObject("data").getString("_id");
                     } else {
@@ -652,7 +707,6 @@ public class Utils {
         }
 
         private static String parseTextJson(String txt) {
-            //if(txt.contains("\"")){
             txt = txt.replaceAll("\"", "&quot;");
             txt = txt.replaceAll('\u0022' + "", "&quot;");
             txt = txt.replaceAll('\u201c' + "", "&quot;");
@@ -664,102 +718,14 @@ public class Utils {
             txt = txt.replaceAll('\u301d' + "", "&quot;");
             txt = txt.replaceAll('\u301e' + "", "&quot;");
             txt = txt.replaceAll('\uff02' + "", "&quot;");
-            //}
             return txt;
         }
 
-        /*public static boolean getGeneDom(final String geneName)
-                throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
-            Element res = null;
-            boolean isValid = false;
-            Document doc;
-            URL cmd;
-            String spec;
-            HttpURLConnection conex;
-            spec = CMD_ESearch.replaceFirst(Token_DbNAME, Db_GENE);
-            spec = spec.replaceFirst(Token_GENE, geneName);
-            cmd = new URL(spec);
-            conex = (HttpURLConnection) cmd.openConnection();
-            conex.setConnectTimeout(30000);
-            conex.setReadTimeout(60000);
-            conex.setRequestMethod("GET");
-            conex.setDoOutput(true);
-            conex.connect();
-            try {
-                InputStream in = conex.getInputStream();
-                doc = getXML(in);
-            } catch (JDOMException jde) {
-                doc = null;
-            } finally {
-                conex.disconnect();
-            }
-
-            if (doc != null) {
-                Element elem;
-                XPath lXPath;
-                String qryKey, webEnv;
-                try {
-                    lXPath = XPath.newInstance(Elem_SrhRES + "/" + Elem_QryKEY);
-                    elem = (Element) lXPath.selectSingleNode(doc);
-                    if (elem == null) {
-                        throw new UseHistoryException("no se encontraron los datos para el parametro de consulta: queryKey");
-                    }
-                    qryKey = elem.getValue();
-                    lXPath = XPath.newInstance(Elem_SrhRES + "/" + Elem_WebENV);
-                    elem = (Element) lXPath.selectSingleNode(doc);
-                    if (elem == null) {
-                        throw new UseHistoryException("no se encontraron los datos para el parametro de consulta: WebEnv");
-                    }
-                    webEnv = elem.getValue();
-                } catch (JDOMException jde) {
-                    qryKey = null;
-                    webEnv = null;
-                }
-
-                if (qryKey == null || webEnv == null) {
-                    throw new UseHistoryException("entrez tal vez no reconocio la consulta, por lo que no devolvio queryKey ni WebEnv");
-                }
-                spec = CMD_ESummary.replaceFirst(Token_DbNAME, Db_GENE);
-                spec = spec.replaceFirst(Token_QryKEY, qryKey);
-                spec = spec.replaceFirst(Token_WebENV, webEnv);
-                cmd = new URL(spec);
-                conex = (HttpURLConnection) cmd.openConnection();
-                conex.setConnectTimeout(30000);
-                conex.setReadTimeout(60000);
-                conex.setRequestMethod("GET");
-                conex.setDoOutput(true);
-                conex.connect();
-                try {
-                    InputStream in = conex.getInputStream();
-                    doc = getXML(in);
-                } catch (JDOMException jde) {
-                    doc = null;
-                } finally {
-                    conex.disconnect();
-                }
-
-                if (doc != null) {
-                    try {
-                        lXPath = XPath.newInstance("//" + Elem_DocSummary + "[" + Elem_NAME + "=\"" + geneName + "\" and " + Elem_ORGANISM + "/" + Elem_SciNAME + "=\"" + Val_HomoSapiens + "\"]");
-                        res = (Element) lXPath.selectSingleNode(doc);
-//                    if( res==null ) {
-//                        throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre "+geneName+" y organismo Homo sapiens");
-//                    }
-                    } catch (JDOMException jde) {
-                        throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
-                    }
-                } // if esummary
-            } // if esearch
-            if (res != null) {
-                isValid = true;
-            }
-            return isValid;
-        }*/
-
     }
-    public static class TEXT
-    {
-                /**
+
+    public static class TEXT {
+
+        /**
          * Obtains the month's name corresponding to the number received
          * specifying the month of the year. The first month of the year is
          * January and its corresponding number is zero.
@@ -775,17 +741,17 @@ public class Utils {
          *
          */
         /*public static String getStrMonth(int month, String lang)
-        {
-            if (lang != null)
-            {
-                return getLocaleString("locale_date", "month_" + month, new Locale(lang));
-            }
-            else
-            {
-                return getLocaleString("locale_date", "month_" + month);
-            }
-        }*/
-                /**
+         {
+         if (lang != null)
+         {
+         return getLocaleString("locale_date", "month_" + month, new Locale(lang));
+         }
+         else
+         {
+         return getLocaleString("locale_date", "month_" + month);
+         }
+         }*/
+        /**
          * Gets the value for a {@code key} in the specified {@code Bundle} with
          * the default {@code locale}.
          * <p>
@@ -799,8 +765,7 @@ public class Utils {
          * stored in {@code Bundle}. un objeto string que representa el valor
          * del elemento {@code key} especificado almacenado en {@code Bundle}.
          */
-        public static String getLocaleString(String Bundle, String key)
-        {
+        public static String getLocaleString(String Bundle, String key) {
             return getLocaleString(Bundle, key, Utils.locale);
         }
 
@@ -821,8 +786,7 @@ public class Utils {
          * un objeto string que representa el valor del elemento {@code key}
          * especificado almacenado en {@code Bundle}.
          */
-        public static String getLocaleString(String Bundle, String key, Locale locale)
-        {
+        public static String getLocaleString(String Bundle, String key, Locale locale) {
             return getLocaleString(Bundle, key, locale, null);
         }
 
@@ -846,24 +810,17 @@ public class Utils {
          * especificado almacenado en {@code Bundle}.
          */
         public static String getLocaleString(String Bundle, String key,
-                Locale locale, ClassLoader loader)
-        {
+                Locale locale, ClassLoader loader) {
 
             String cad = "";
-            try
-            {
-                if (loader == null)
-                {
+            try {
+                if (loader == null) {
                     cad = java.util.ResourceBundle.getBundle(Bundle, locale).getString(key);
-                }
-                else
-                {
+                } else {
                     cad = java.util.ResourceBundle.getBundle(Bundle, locale, loader).getString(key);
                 }
                 //System.out.println("cad:" + cad);
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, "Error while looking for properties key:{0} in {1}", new Object[]{key, Bundle});
                 //SWBUtils.log.error("Error while looking for properties key:" + key + " in " + Bundle);
                 return "";
