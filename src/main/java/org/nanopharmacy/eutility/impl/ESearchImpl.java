@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -67,38 +66,83 @@ public class ESearchImpl {
     public static final String Val_HomoSapiens = "Homo sapiens"; // Valor en el DTD de E-utility
 
     public static final int OFF_SET = 10000;
-    public static final String RET_MAX = "10000";         // Número máximo de registros en el query de esearch
-    public static final String Token_RetMax = "@rtmx_";      // Indica el número máximo de registros a incluir en la descarga
-    public static final String Token_RetStart = "@strt_";   // Indica el índice de registro en que debe iniciar la descarga de información
-    public static final String Token_DbNAME = "@db_";
+    public static final String RET_MAX = "10000";         // Numero maximo de registros en el query de esearch
+    public static final String Token_RetMax = "@rtmx_";   // numero maximo de registros a incluir en la descarga
+    public static final String Token_RetStart = "@strt_"; // indice de registro en que debe iniciar la descarga de informacion
+    public static final String Token_DbNAME = "@db_";     // nombre de la base de datos en la que se realiza la busqueda/extraccion
     public static final String Token_GENE = "@gene_";     // Mock up para el nombre del gen en el query de esearch
-    public static final String Token_QryKEY = "@qrykey_";
-    public static final String Token_WebENV = "@webenv_";
+    public static final String TOKEN_ALTMOL = "@altMol_";  // valor a sustituir por el simbolo de la alteracion molecular y sus alias
+    public static final String Token_QryKEY = "@qrykey_"; // valor del parametro query_key generado por una busqueda previa
+    public static final String Token_WebENV = "@webenv_"; // valor del parametro WebEnv generado por una busqueda previa
+    
+    /** año de inicio de periodo de busqueda */
     public static final String Token_LY = "@ly_";
+    
+    /** mes de inicio de periodo de busqueda */
     public static final String Token_LM = "@lm_";
+    
+    /** dia de inicio de periodo de busqueda */
     public static final String Token_LD = "@ld_";
+    
+    /** año de termino de periodo de busqueda */
     public static final String Token_UY = "@uy_";
+    
+    /** mes de termino de periodo de busqueda */
     public static final String Token_UM = "@um_";
+    
+    /** dia de termino de periodo de busqueda */
     public static final String Token_UD = "@ud_";
 
-    // ESearch (text searches)
-    // eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
-    public static final String CMD_ESearch = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" + Token_DbNAME + "&term=((" + Token_GENE + "%5BGene%20Name%5D)%20AND%20homo%20sapiens%5BOrganism%5D)%20AND%20alive%5Bprop%5D&usehistory=y&retmode=xml&retmax=" + RET_MAX;
-    // ESummary (document summary downloads)
-    // eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi
-    public static final String CMD_ESummary = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=" + Token_DbNAME + "&query_key=" + Token_QryKEY + "&WebEnv=" + Token_WebENV + "&retmode=xml";
+    /**
+     * Indica la URL para las busquedas de informaci&oacute;n de genes
+     */
+    public static final String CMD_ESearch = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" +
+            Db_GENE + "&term=((" + Token_GENE +
+            "%5BGene%20Name%5D)%20AND%20homo%20sapiens%5BOrganism%5D)%20AND%20alive%5Bprop%5D&usehistory=y&retmode=xml";
+    
+    /**
+     * Indica la URL para la peticion de la informacion coincidente con la busqueda de informacion de genes
+     */
+    public static final String CMD_ESummary = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=" +
+            Token_DbNAME + "&query_key=" + Token_QryKEY + "&WebEnv=" + Token_WebENV + "&retmode=xml";
+    
+    /**
+     * Indica la URL para las busquedas de informaci&oacute;n de enfermedades relacionadas a un gen
+     */
+    public static final String CMD_ESearchD = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" +
+            Token_DbNAME + "&term=(" + Token_GENE +
+            ")%20AND%20%22diseases%22%5BFilter%5D&usehistory=y&retmode=xml&retmax=" + RET_MAX;
+    
+    public static final String CMD_ESummaryD = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=" +
+            Token_DbNAME + "&query_key=" + Token_QryKEY + "&WebEnv=" + Token_WebENV + "&retmode=xml";
 
-    public static final String CMD_ESearchD = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" + Token_DbNAME + "&term=(" + Token_GENE + ")%20AND%20%22diseases%22%5BFilter%5D&usehistory=y&retmode=xml&retmax=" + RET_MAX;
-    public static final String CMD_ESummaryD = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=" + Token_DbNAME + "&query_key=" + Token_QryKEY + "&WebEnv=" + Token_WebENV + "&retmode=xml";
+    public static final String CMD_ESearchL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" +
+            Token_DbNAME + "&term=" + Token_GENE + "&usehistory=y&retmode=xml&retmax=" + RET_MAX;
+    
+    public static final String CMD_ESummaryL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=" +
+            Token_DbNAME + "&query_key=" + Token_QryKEY + "&WebEnv=" + Token_WebENV + "&retmode=xml";
 
-    public static final String CMD_ESearchL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" + Token_DbNAME + "&term=" + Token_GENE + "&usehistory=y&retmode=xml&retmax=" + RET_MAX;
-    public static final String CMD_ESummaryL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=" + Token_DbNAME + "&query_key=" + Token_QryKEY + "&WebEnv=" + Token_WebENV + "&retmode=xml";
-
-    public static final String CMD_ESearchP = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" + Token_DbNAME + "&term=" + Token_GENE + "%20%5BAll%20Fields%5D%20AND%20(%22" + Token_LY + "%2F" + Token_LM + "%2F" + Token_LD + "%22%5BPDat%5D%20:%20%22" + Token_UY + "%2F" + Token_UM + "%2F" + Token_UD + "%22%5BPDat%5D%20AND%20%22humans%22%5BMeSH%20Terms%5D)&usehistory=y&retmode=xml&retmax=" + RET_MAX;
-    public static final String CMD_EFetch = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=" + Token_DbNAME + "&query_key=" + Token_QryKEY + "&WebEnv=" + Token_WebENV + "&retmode=xml&retstart=" + Token_RetStart + "&retmax=" + Token_RetMax;
+    /**
+     * Indica la URL para las busquedas de informaci&oacute;n de articulos en las bases de datos PubMed y PubMed Central
+     */
+    public static final String CMD_ESearchP = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" +
+            Token_DbNAME + "&term=" + "(%22" + Token_LY + "%2F" + Token_LM + "%2F" + Token_LD + "%22%5BPDat%5D%20:%20%22" +
+    Token_UY + "%2F" + Token_UM + "%2F" + Token_UD + "%22%5BPDat%5D%20AND%20%22humans%22%5BMeSH%20Terms%5D%20AND%20%22has%20abstract%22%5BFilter%5D)%20AND%20(%22" +
+    Token_GENE + "%22%5BAll%20Fields%5D%20" + TOKEN_ALTMOL + ")&usehistory=y&retmode=xml";
+    //+ Token_GENE + "%20%5BAll%20Fields%5D%20AND%20(%22" + Token_LY + "%2F" + 
+//            Token_LM + "%2F" + Token_LD + "%22%5BPDat%5D%20:%20%22" + Token_UY + "%2F" + Token_UM + "%2F" +
+//            Token_UD + "%22%5BPDat%5D%20AND%20%22humans%22%5BMeSH%20Terms%5D)&usehistory=y&retmode=xml";
+    //("2010/10/08"[PDat] : "2015/10/06"[PDat] AND "humans"[MeSH Terms] AND "has abstract"[Filter]) AND ("BRCA1"[All Fields] OR "c.3548A>G"[All Fields] OR "3548A>G"[All Fields] OR "K1183R"[All Fields])
+    
+    public static final String CMD_EFetch = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=" +
+            Token_DbNAME + "&query_key=" + Token_QryKEY + "&WebEnv=" + Token_WebENV + "&retmode=xml&retstart=" +
+            Token_RetStart + "&retmax=" + Token_RetMax;
+    
     public static final String Url_NBCI = "http://www.ncbi.nlm.nih.gov/";
 
-    public static final String CMD_ESearchGene = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" + Token_DbNAME + "&term=((" + Token_GENE + "%5BGene%5D)%20AND%20homo%20sapiens%5BOrganism%5D)%20AND%20alive%5Bprop%5D&retmode=xml";
+    public static final String CMD_ESearchGene = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" +
+            Token_DbNAME + "&term=((" + Token_GENE +
+            "%5BGene%5D)%20AND%20homo%20sapiens%5BOrganism%5D)%20AND%20alive%5Bprop%5D&retmode=xml";
 
     /**
      * Toma la url CMD_ESearchP y remplaza los tokens <code>Token_LY</code>,
@@ -107,20 +151,24 @@ public class ESearchImpl {
      * y día entre la fecha del día de hoy y la misma fecha pero
      * <code>ellapsedYears</code> años atrás
      *
-     * @param cmd Cadena de caracteres en la que se remplazaran los parámetros
-     * de consulta.
-     * @param ellapsedYears El parámetro ellapsedYears define el número de años
-     * atrás a partir de la fecha actual para realizar una búsqueda
+     * @param cmd cadena de caracteres en la que se remplazar&aacute;n los par&aacute;metros de consulta.
+     * @param ellapsedYears n&uacute;mero de años atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
+     * es excluyente con {@code ellapsedDays}
+     * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
+     * es excluyente con {@code ellapsedYears}
      * @return Un string que representa <code>CMD_ESearchP</code> con los
      * parámetros del query correspondientes a las fechas de consulta
      */
-    private String getEllapsedTimeQuery(String cmd, final int ellapsedYears) {
+    private String getEllapsedTimeQuery(String cmd, final int ellapsedYears, final int ellapsedDays) {
         GregorianCalendar tq = new GregorianCalendar();
-        //String cmd = CMD_ESearchP;
         cmd = cmd.replaceFirst(Token_UY, Integer.toString(tq.get(Calendar.YEAR)))
                 .replaceFirst(Token_UM, Integer.toString(tq.get(Calendar.MONTH) + 1))
                 .replaceFirst(Token_UD, Integer.toString(tq.get(Calendar.DATE)));
-        tq.add(Calendar.YEAR, -ellapsedYears);
+        if (ellapsedYears > 0) {
+            tq.add(Calendar.YEAR, -ellapsedYears);
+        } else if (ellapsedDays > 0) {
+            tq.add(Calendar.DAY_OF_YEAR, -ellapsedDays);
+        }
         cmd = cmd.replaceFirst(Token_LY, Integer.toString(tq.get(Calendar.YEAR)))
                 .replaceFirst(Token_LM, Integer.toString(tq.get(Calendar.MONTH) + 1))
                 .replaceFirst(Token_LD, Integer.toString(tq.get(Calendar.DATE)));
@@ -131,19 +179,17 @@ public class ESearchImpl {
      * Contruye y devuelve un objeto Json que contiene la información básica de
      * un gen.
      *
-     * @param geneName El parámetro geneName efine el nombre del gen, por
-     * ejemplo: "SF3B1".
-     * @return El objeto JSON con la información básica del genUn string que
-     * representa <code>CMD_ESearchP</code> con los parámetros del query
-     * correspondientes a las fechas de consulta.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * @param geneName s&iacute;mbolo del gen, por ejemplo: "SF3B1".
+     * @return un objeto JSON con la informaci&oacute;n b&aacute;sica del {@code geneName} proporcionado.
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
      */
     public JSONObject getGeneInfo(final String geneName)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
+        
         JSONObject gene = null;
         Element docSum;
         docSum = getGeneDom(geneName);
@@ -171,34 +217,31 @@ public class ESearchImpl {
             }/*finally {
                 
              }*/
-
         }
         return gene;
     }
 
     /**
-     * Entrega un JDOM Elemento que representa la información básica de un gen
-     * relacionada unicamente con organismos humandos. Esta información es
-     * obtenida usando el sistema de consultas Entrez de la NCBI.
-     *
-     * @param geneName El parámetro geneName define el nombre del gen, por
-     * ejemplo: "SF3B1".
+     * Entrega un JDOM Elemento que representa la informaci&oacute;n b&aacute;sica de un gen
+     * relacionado a humanos. Esta informaci&oacute;n es obtenida usando el sistema
+     * de consultas Entrez de la NCBI.
+     * @param geneName s&iacute;mbolo del gen, por ejemplo: {@literal SF3B1}.
      * @return El objeto JSON con la información básica del gen.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
      */
-    public Element getGeneDom(final String geneName)
-            throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
+    public Element getGeneDom(final String geneName) throws NoDataException, UseHistoryException,
+            MalformedURLException, ProtocolException, IOException {
         Element res = null;
         Document doc;
         URL cmd;
-        String spec;
+        String spec = CMD_ESearch.replaceFirst(Token_GENE, geneName);
         HttpURLConnection conex;
-        spec = CMD_ESearch.replaceFirst(Token_DbNAME, Db_GENE);
-        spec = spec.replaceFirst(Token_GENE, geneName);
+        //spec = CMD_ESearch.replaceFirst(Token_DbNAME, Db_GENE);
+        //spec = CMD_ESearch.replaceFirst(Token_GENE, geneName);
         cmd = new URL(spec);
         conex = (HttpURLConnection) cmd.openConnection();
         conex.setConnectTimeout(30000);
@@ -275,23 +318,20 @@ public class ESearchImpl {
     }
 
     /**
-     * Contruye y devuelve un arreglo Json que contiene la información sobre
-     * enfermedades y síndromes relacionados con un gen. Esta información es
-     * obtenida usando el método getDiseasesDom(String).
-     *
-     * @param geneName El parámetro geneName define el nombre del gen, por
-     * ejemplo: "SF3B1".
-     * @return El arreglo JSON con la lista de enfermedades y síndromes
-     * relacionados con dicho gen.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * Construye y devuelve un arreglo JSON que contiene la informaci&oacute;n sobre
+     * enfermedades relacionadas con un gen. Esta informaci&oacute;n es obtenida usando 
+     * {@link getDiseasesDom(String)}.
+     * @param geneName s&iacute;mbolo del gen, por ejemplo: {@literal SF3B1}.
+     * @return un arreglo JSON con la lista de enfermedades relacionadas con el gen especificado.
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
      */
     public JSONArray getDiseasesInfo(final String geneName)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
-        //JSONObject data = new JSONObject();
+        
         JSONArray diseases = new JSONArray();
         Element docSumSet;
         docSumSet = getDiseasesDom(geneName);
@@ -327,23 +367,21 @@ public class ESearchImpl {
     }
 
     /**
-     * Entrega un JDOM Elemento que representa la información sobre enfermedades
-     * y síndromes relacionados con un gen. Esta información es obtenida usando
+     * Entrega un elemento JDOM que representa la informaci&oacute;n sobre enfermedades
+     * relacionadas con un gen. Esta informaci&oacute;n es obtenida desde
      * el sistema de consultas Entrez de la NCBI.
-     *
-     * @param geneName El parámetro geneName define el nombre del gen, por
-     * ejemplo: "SF3B1".
+     * @param geneName s&iacute;mbolo del gen, por ejemplo: {@literal SF3B1}.
      * @return Un elemento JDOM con la estructura <em>DocumentSummarySet</em>
-     * que contiene la lista de enfermedades y síndromes relacionadas con el gen
-     * en cuestión.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * que contiene la lista de enfermedades relacionadas con el gen proporcionado.
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
      */
     public Element getDiseasesDom(final String geneName)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
+        
         Element res = null;
         Document doc;
         URL cmd;
@@ -388,7 +426,7 @@ public class ESearchImpl {
                 qryKey = null;
                 webEnv = null;
             }
-////////////////////////////////////////////////////////////////////////////////            
+            
             if (qryKey == null || webEnv == null) {
                 throw new UseHistoryException("entrez tal vez no reconocio la consulta, por lo que no devolvio queryKey ni WebEnv");
             }
@@ -436,8 +474,8 @@ public class ESearchImpl {
      * ejemplo: "SF3B1".
      * @return El arreglo JSON con la lista de pruebas de laboratorio
      * relacionadas con dicho gen.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
@@ -483,8 +521,8 @@ public class ESearchImpl {
      * @return Un elemento JDOM con la estructura <em>DocumentSummarySet</em>
      * que contiene la lista de pruebas de laboratorio relacionadas con el gen
      * en cuestión.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
@@ -590,38 +628,40 @@ public class ESearchImpl {
     }
 
     /**
-     * Contruye y devuelve un objeto Json que contiene la información sobre las
-     * publicaciones médicas clasificadas en dos criterios. Las publicaciones
+     * Construye y devuelve un objeto Json que contiene la informaci&oacute;n sobre las
+     * publicaciones m&eacute;dicas clasificadas en dos criterios. Las publicaciones
      * que no cumplen con una relevancia mayor a cero y las que tienen cierta
-     * relevancia. Para aquellas publicaciones o artículos con una relevancia
-     * mayor a cero, incluyen las propiedad <em>pmid</em> con el valor del
-     * identificador del artículo, y la propiedad “ranking” con el valor de la
+     * relevancia. Para aquellas publicaciones o art&iacute;culos con una relevancia
+     * mayor a cero, incluyen las propiedades del
+     * identificador del artículo, y la propiedad {@literal ranking} con el valor de la
      * relevancia correspondiente y se encuentran en el arreglo
-     * <em>outstanding</em>. Los artículos con una relevancia de valor igual a
+     * <em>outstanding</em>. Los art&iacute;culos con una relevancia de valor igual a
      * cero, se encuentran en un arreglo de nombre <em>rejected</em> el cual
-     * contiene el identificadore de cada uno de estos artículos.
+     * contiene el identificador de cada uno de estos art&iacute;culos.
      *
-     * @param geneName El parámetro geneName define el nombre del gen en
-     * cuestión, por ejemplo: SF3B1.
-     * @param molecularAlt La alteración molecular relacionada con el gen en
-     * cuestión. Por ejemplo: Lys700Glu.
-     * @param ellapsedYears El número de años hacia atrás para realizar la
-     * búsqueda. La búsqueda comprende a partir de un día como el actual este
-     * valor de años atrás hasta el día actual.
-     * @return El objeto JSON con la información de las publicaciones médicas
-     * con referencias a los valores de los parámetros. Este objeto incluye dos
+     * @param geneName s&iacute;mbolo del gen a buscar en los art&iacute;culos, por ejemplo: {@literal SF3B1}
+     * @param molecularAlt s&iacute;mbolo de la alteraci&oacute;n molecular relacionada con el gen. Por ejemplo: {@literal Lys700Glu}.
+     * @param ellapsedYears n&uacute;mero de años a considerar para la fecha de publicaci&oacute;n de los art&iacute;culos,
+     * es excluyente con {@code ellapsedDays}
+     * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
+     * es excluyente con {@code ellapsedYears}
+     * coincidentes. La b&uacute;squeda comprende ese n&uacute;mero de años at&aacute;s a partir del día actual.
+     * @return un objeto JSON con la informaci&oacute;n de las publicaciones m&eacute;dicas
+     * referentes a los valores de los par&aacute;metros. Este objeto incluye dos
      * arreglos: El arrego "outstanding" contiene las publicaciones provenientes
-     * de PubMed y de PMC. El arreglo "rejected" contine el <code>pmid</code> de
-     * las publicaciones rechazadas del repositorio PubMed y <code>pmc</code>
+     * de PubMed y de PMC. El arreglo "rejected" contiene el <code>pmid</code> de
+     * las publicaciones rechazadas del repositorio PubMed y <code>pmc</code> de
      * las publicaciones rechazadas desde el repocitorio PMC.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
      */
-    public JSONObject getPublicationsInfo(final String geneName, final String molecularAlt, final int ellapsedYears)
+    public JSONObject getPublicationsInfo(final String geneName, final String molecularAlt,
+            final int ellapsedYears, final int ellapsedDays)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
+        
         JSONObject publications = new JSONObject();// publicaciones aceptadas y rechazadas
         JSONArray outstanding = new JSONArray();   // publicaciones aceptadas en el resultado final
         JSONArray rejected = new JSONArray();      // publicaciones rechazadas debido a su ranking menor a 2
@@ -630,7 +670,7 @@ public class ESearchImpl {
         List<String> accepted;
         List<Element> abstractLst;
         Document doc;
-        doc = getPublicationsDom(geneName, molecularAlt, ellapsedYears);
+        doc = getPublicationsDom(geneName, molecularAlt, ellapsedYears, ellapsedDays);
 
         XPath lXPath;
         JSONObject article, abstrct;
@@ -714,34 +754,36 @@ public class ESearchImpl {
     }
 
     /**
-     * Entrega un JDOM Elemento que representa la información sobre
-     * publicaciones médicas relacionadas con un gen. Esta información es
+     * Entrega un elemento JDOM que representa la informaci&oacute;n sobre
+     * publicaciones m&eacute;dicas relacionadas con un gen. Esta informaci&oacute;n es
      * obtenida usando las bases de datos PubMed y PubMed Central del sistema de
      * consultas Entrez de la NCBI.
      *
-     * @param geneName El parámetro geneName define el nombre del gen, por
-     * ejemplo: "SF3B1".
-     * @param molecularAlt La alteración genética relacionada con el gen
+     * @param geneName s&iacute;mbolo del gen, por ejemplo: {@literal SF3B1}.
+     * @param molecularAlt s&iacute;mbolo de la alteraci&oacute;n gen&eacute;tica relacionada con el gen
      * <code>geneName</code>
-     * @param ellapsedYears El número de años hacia atrás para realizar la
-     * búsqueda. La búsqueda comprende a partir de un día como el actual este
-     * valor de años atrás hasta el día actual.
+     * @param ellapsedYears n&uacute;mero de años a considerar para la fecha de publicaci&oacute;n de los art&iacute;culos coicidentes,
+     * es excluyente con {@code ellapsedDays}
+     * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
+     * es excluyente con {@code ellapsedYears}
      * @return Un documento JDOM con la estructura <em>PubmedArticleSet</em> que
-     * contiene dos elementos <em>ArticleList</em>, el primero corresponde con
-     * la base de datos PubMed y el segundo con PMC.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * contiene dos elementos <em>ArticleList</em>, el primero corresponde a los datos extraidos de
+     * la base de datos PubMed y el segundo de PMC.
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
      */
-    public Document getPublicationsDom(final String geneName, final String molecularAlt, int ellapsedYears)
+    public Document getPublicationsDom(final String geneName, final String molecularAlt,
+            int ellapsedYears, final int ellapsedDays)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
+        
         Document doc = new Document(new Element("PubmedArticleSet"));
         Element elem;
-        elem = getPubMedDom(Db_PUBMED, geneName, molecularAlt, ellapsedYears);
+        elem = getPubMedDom(Db_PUBMED, geneName, molecularAlt, ellapsedYears, ellapsedDays);
         doc.getRootElement().addContent(elem);
-        elem = getPMCDom(Db_PMC, geneName, molecularAlt, ellapsedYears);
+        elem = getPMCDom(Db_PMC, geneName, molecularAlt, ellapsedYears, ellapsedDays);
         doc.getRootElement().addContent(elem);
         return doc;
     }
@@ -759,25 +801,32 @@ public class ESearchImpl {
      * <code>geneName</code>
      * @param ellapsedYears El número de años hacia atrás para realizar la
      * búsqueda. La búsqueda comprende a partir de un día como el actual este
-     * valor de años atrás hasta el día actual.
+     * valor de años atrás hasta el día actual,
+     * es excluyente con {@code ellapsedDays}
+     * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
+     * es excluyente con {@code ellapsedYears}
      * @return Un elemento JDOM con la estructura <em>ArticleList</em> que
      * contiene la publicaciones médicas relacionadas con el gen en cuestión.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
      */
-    public Element getPubMedDom(final String dbName, final String geneName, final String molecularAlt, int ellapsedYears)
+    public Element getPubMedDom(final String dbName, final String geneName, final String molecularAlt,
+            int ellapsedYears, final int ellapsedDays)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
+        
         Element root = new Element("ArticleList");
         Document doc;
         URL cmd;
         HttpURLConnection conex;
         String spec;
-        spec = getEllapsedTimeQuery(CMD_ESearchP, ellapsedYears);
+        spec = getEllapsedTimeQuery(CMD_ESearchP, ellapsedYears, ellapsedDays);
+        spec = spec.replaceFirst(TOKEN_ALTMOL, getQueryValue(molecularAlt));
         spec = spec.replaceFirst(Token_DbNAME, dbName);
         spec = spec.replaceFirst(Token_GENE, geneName);
+        System.out.println("\nURL:\n" + spec);
         cmd = new URL(spec);
         conex = (HttpURLConnection) cmd.openConnection();
         conex.setConnectTimeout(30000);
@@ -836,136 +885,139 @@ public class ESearchImpl {
             if (qryKey == null || webEnv == null) {
                 throw new UseHistoryException("entrez tal vez no reconocio la consulta, por lo que no devolvio queryKey ni WebEnv");
             }
-            spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PUBMED);
-            spec = spec.replaceFirst(Token_QryKEY, qryKey);
-            spec = spec.replaceFirst(Token_WebENV, webEnv);
-            spec = spec.replaceFirst(Token_RetStart, "0");
-            spec = spec.replaceFirst(Token_RetMax, RET_MAX);
-            cmd = new URL(spec);
-            conex = (HttpURLConnection) cmd.openConnection();
-            conex.setConnectTimeout(30000);
-            conex.setReadTimeout(60000);
-            conex.setRequestMethod("GET");
-            conex.setDoOutput(true);
-            conex.connect();
-            try {
-                InputStream in = conex.getInputStream();
-                doc = getXML(in);
-            } catch (JDOMException jde) {
-                doc = null;
-            } finally {
-                conex.disconnect();
-            }
-            if (doc != null) {
-                Element art, abs;
-                List<Element> abstractLst;
-                String pmid, author, month, year, value;
-                StringBuilder r;
-                int rank;
-                Matcher m;
-
+            
+            if (count > 0) {
+                spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PUBMED);
+                spec = spec.replaceFirst(Token_QryKEY, qryKey);
+                spec = spec.replaceFirst(Token_WebENV, webEnv);
+                spec = spec.replaceFirst(Token_RetStart, "0");
+                spec = spec.replaceFirst(Token_RetMax, Integer.toString(count));
+                cmd = new URL(spec);
+                conex = (HttpURLConnection) cmd.openConnection();
+                conex.setConnectTimeout(30000);
+                conex.setReadTimeout(60000);
+                conex.setRequestMethod("GET");
+                conex.setDoOutput(true);
+                conex.connect();
                 try {
-                    lXPath = XPath.newInstance("//PubmedArticleSet");
-                    elem = (Element) lXPath.selectSingleNode(doc);
-                    if (elem == null) {
-                        throw new NoDataException("no se encontraron elementos DocumentSummary para el gen con nombre " + geneName);
-                    }
+                    InputStream in = conex.getInputStream();
+                    doc = getXML(in);
+                } catch (JDOMException jde) {
+                    doc = null;
+                } finally {
+                    conex.disconnect();
+                }
+                if (doc != null) {
+                    Element art, abs;
+                    List<Element> abstractLst;
+                    String pmid, author, month, year, value;
+                    StringBuilder r;
+                    int rank;
+                    Matcher m;
 
-                    //List<String> ids = getValues(nodes);
-                    List<Element> pubmedArtList = elem.getChildren("PubmedArticle");
-                    for (Element pubmedArt : pubmedArtList) {
-                        if (pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Abstract") == null) {
-                            continue;
-                        }
-                        Document d = new Document((Element) (pubmedArt.clone()));
-                        art = new Element("article");
-
-                        abstractLst = pubmedArt.getChild("MedlineCitation").getChild("Article")
-                                .getChild("Abstract").getChildren("AbstractText");
-                        for (Element e : abstractLst) {
-                            abs = new Element("abstract");
-
-                            elem = new Element("label");
-                            elem.setText(e.getAttributeValue("Label") == null ? "Unlabeled" : abs.getAttributeValue("Label"));
-                            abs.addContent(elem);
-
-                            elem = new Element("text");
-                            value = e.getValue();
-                            elem.setText(value);
-                            abs.addContent(elem);
-
-                            m = prognosisPtrn.matcher(value);
-                            elem = new Element("prognosis");
-                            elem.setText(m.matches() ? "1" : "0");
-                            abs.addContent(elem);
-                            m = treatmentPtrn.matcher(value);
-                            elem = new Element("treatment");
-                            elem.setText(m.matches() ? "1" : "0");
-                            abs.addContent(elem);
-                            m = predictPtrn.matcher(value);
-                            elem = new Element("prediction");
-                            elem.setText(m.matches() ? "1" : "0");
-                            abs.addContent(elem);
-
-                            rank = Utils.getRanking(value, geneName, molecularAlt);
-                            elem = new Element("rank");
-                            elem.setText(Integer.toString(rank));
-                            abs.addContent(elem);
-
-                            art.addContent(abs);
+                    try {
+                        lXPath = XPath.newInstance("//PubmedArticleSet");
+                        elem = (Element) lXPath.selectSingleNode(doc);
+                        if (elem == null) {
+                            throw new NoDataException("no se encontraron elementos DocumentSummary para el gen con nombre " + geneName);
                         }
 
-                        elem = new Element("title");
-                        elem.setText(pubmedArt.getChild("MedlineCitation").getChild("Article").getChildText("ArticleTitle"));
-                        art.addContent(elem);
-                        pmid = pubmedArt.getChild("MedlineCitation").getChildText("PMID");
-                        elem = new Element("pmid");
-                        elem.setText(pmid);
-                        art.addContent(elem);
-                        elem = new Element("url");
-                        elem.setText(Url_NBCI + Db_PUBMED + "/" + pmid);
-                        art.addContent(elem);
+                        //List<String> ids = getValues(nodes);
+                        List<Element> pubmedArtList = elem.getChildren("PubmedArticle");
+                        for (Element pubmedArt : pubmedArtList) {
+                            if (pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Abstract") == null) {
+                                continue;
+                            }
+                            Document d = new Document((Element) (pubmedArt.clone()));
+                            art = new Element("article");
 
-                        //System.out.println("1.." + pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList"));
-                        //System.out.println("2..." + pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList").getChildren("Author"));
-                        r = new StringBuilder();
-                        if (pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList") != null) {
-                            nodes = pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList").getChildren("Author");
-                            elem = nodes.get(0);
+                            abstractLst = pubmedArt.getChild("MedlineCitation").getChild("Article")
+                                    .getChild("Abstract").getChildren("AbstractText");
+                            for (Element e : abstractLst) {
+                                abs = new Element("abstract");
 
-                            author = elem.getChildText("LastName") + ", " + elem.getChildText("Initials");
-                            elem = new Element("author");
-                            elem.setText(author);
+                                elem = new Element("label");
+                                elem.setText(e.getAttributeValue("Label") == null ? "Unlabeled" : abs.getAttributeValue("Label"));
+                                abs.addContent(elem);
+
+                                elem = new Element("text");
+                                value = e.getValue();
+                                elem.setText(value);
+                                abs.addContent(elem);
+
+                                m = prognosisPtrn.matcher(value);
+                                elem = new Element("prognosis");
+                                elem.setText(m.matches() ? "1" : "0");
+                                abs.addContent(elem);
+                                m = treatmentPtrn.matcher(value);
+                                elem = new Element("treatment");
+                                elem.setText(m.matches() ? "1" : "0");
+                                abs.addContent(elem);
+                                m = predictPtrn.matcher(value);
+                                elem = new Element("prediction");
+                                elem.setText(m.matches() ? "1" : "0");
+                                abs.addContent(elem);
+
+                                rank = Utils.getRanking(value, geneName, molecularAlt);
+                                elem = new Element("rank");
+                                elem.setText(Integer.toString(rank));
+                                abs.addContent(elem);
+
+                                art.addContent(abs);
+                            }
+
+                            elem = new Element("title");
+                            elem.setText(pubmedArt.getChild("MedlineCitation").getChild("Article").getChildText("ArticleTitle"));
+                            art.addContent(elem);
+                            pmid = pubmedArt.getChild("MedlineCitation").getChildText("PMID");
+                            elem = new Element("pmid");
+                            elem.setText(pmid);
+                            art.addContent(elem);
+                            elem = new Element("url");
+                            elem.setText(Url_NBCI + Db_PUBMED + "/" + pmid);
                             art.addContent(elem);
 
-                            
-                            for (Element e : nodes) {
-                                r.append(e.getChildText("LastName")).append(", ").append(e.getChildText("Initials")).append("; ");
+                            //System.out.println("1.." + pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList"));
+                            //System.out.println("2..." + pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList").getChildren("Author"));
+                            r = new StringBuilder();
+                            if (pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList") != null) {
+                                nodes = pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList").getChildren("Author");
+                                elem = nodes.get(0);
+
+                                author = elem.getChildText("LastName") + ", " + elem.getChildText("Initials");
+                                elem = new Element("author");
+                                elem.setText(author);
+                                art.addContent(elem);
+
+
+                                for (Element e : nodes) {
+                                    r.append(e.getChildText("LastName")).append(", ").append(e.getChildText("Initials")).append("; ");
+                                }
                             }
+
+                            elem = pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Journal").getChild("JournalIssue");
+                            r.append("(").append(elem.getChild("PubDate").getChildText("Year")).append("). ");
+                            r.append(elem.getParentElement().getChildText("Title"));
+                            r.append(". ISSN:").append(elem.getParentElement().getChildText("ISSN"));
+                            r.append(", vol.").append(elem.getChildText("Volume"));
+                            r.append(", issue ").append(elem.getChildText("Issue")).append(". ");
+                            r.append(elem.getChild("PubDate").getChildText("Day") == null
+                                    ? ""
+                                    : " " + elem.getChild("PubDate").getChildText("Day"));
+                            elem = new Element("reference");
+                            elem.setText(r.toString());
+                            art.addContent(elem);
+
+                            root.addContent(art);
                         }
-
-                        elem = pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Journal").getChild("JournalIssue");
-                        r.append("(").append(elem.getChild("PubDate").getChildText("Year")).append("). ");
-                        r.append(elem.getParentElement().getChildText("Title"));
-                        r.append(". ISSN:").append(elem.getParentElement().getChildText("ISSN"));
-                        r.append(", vol.").append(elem.getChildText("Volume"));
-                        r.append(", issue ").append(elem.getChildText("Issue")).append(". ");
-                        r.append(elem.getChild("PubDate").getChildText("Day") == null
-                                ? ""
-                                : " " + elem.getChild("PubDate").getChildText("Day"));
-                        elem = new Element("reference");
-                        elem.setText(r.toString());
-                        art.addContent(elem);
-
-                        root.addContent(art);
+    //XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+    //String xmlString = outputter.outputString(root);
+    //System.out.println("\nres="+xmlString);
+                    } catch (JDOMException jde) {
+                        throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
                     }
-//XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
-//String xmlString = outputter.outputString(root);
-//System.out.println("\nres="+xmlString);
-                } catch (JDOMException jde) {
-                    throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
-                }
-            } // if esummary
+                } // if esummary
+            }// if count > 0
         } // if esearch
         return root;
     }
@@ -983,25 +1035,31 @@ public class ESearchImpl {
      * <code>geneName</code>
      * @param ellapsedYears El número de años hacia atrás para realizar la
      * búsqueda. La búsqueda comprende a partir de un día como el actual este
-     * valor de años atrás hasta el día actual.
+     * valor de años atrás hasta el día actual,
+     * es excluyente con {@code ellapsedDays}
+     * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
+     * es excluyente con {@code ellapsedYears}
      * @return Un elemento JDOM con la estructura <em>ArticleList</em> que
      * contiene la publicaciones médicas relacionadas con el gen en cuestión.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
      */
-    public Element getPMCDom(final String dbName, final String geneName, final String molecularAlt, int ellapsedYears)
+    public Element getPMCDom(final String dbName, final String geneName, final String molecularAlt,
+            int ellapsedYears, final int ellapsedDays)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
         Element root = new Element("ArticleList");
         Document doc;
         URL cmd;
         HttpURLConnection conex;
         String spec;
-        spec = getEllapsedTimeQuery(CMD_ESearchP, ellapsedYears);
+        spec = getEllapsedTimeQuery(CMD_ESearchP, ellapsedYears, ellapsedDays);
+        spec = spec.replaceFirst(TOKEN_ALTMOL, getQueryValue(molecularAlt));
         spec = spec.replaceFirst(Token_DbNAME, dbName);
         spec = spec.replaceFirst(Token_GENE, geneName);
+        System.out.println("\nURL:\n" + spec);
         cmd = new URL(spec);
         conex = (HttpURLConnection) cmd.openConnection();
         conex.setConnectTimeout(30000);
@@ -1060,100 +1118,105 @@ public class ESearchImpl {
                 throw new UseHistoryException("entrez tal vez no reconocio la consulta, por lo que no devolvio queryKey ni WebEnv");
             }
 
-            spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PMC);
-            spec = spec.replaceFirst(Token_QryKEY, qryKey);
-            spec = spec.replaceFirst(Token_WebENV, webEnv);
-            spec = spec.replaceFirst(Token_RetStart, "0");
-            spec = spec.replaceFirst(Token_RetMax, Integer.toString(count));
+            if (count > 0) {
+                spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PMC);
+                spec = spec.replaceFirst(Token_QryKEY, qryKey);
+                spec = spec.replaceFirst(Token_WebENV, webEnv);
+                spec = spec.replaceFirst(Token_RetStart, "0");
+                spec = spec.replaceFirst(Token_RetMax, Integer.toString(count));
 
-            cmd = new URL(spec);
-            conex = (HttpURLConnection) cmd.openConnection();
-            conex.setConnectTimeout(30000);
-            conex.setReadTimeout(60000);
-            conex.setRequestMethod("GET");
-            conex.setDoOutput(true);
-            conex.connect();
-            try {
-                InputStream in = conex.getInputStream();
-                doc = getXML(in);
-            } catch (JDOMException jde) {
-                doc = null;
-            } finally {
-                conex.disconnect();
-            }
-            if (doc != null) {
-                Element art, abs;
-                String pmc, author, month, year, value;
-                StringBuilder r;
-                Document d;
-                int rank;
-
+                cmd = new URL(spec);
+                conex = (HttpURLConnection) cmd.openConnection();
+                conex.setConnectTimeout(30000);
+                conex.setReadTimeout(60000);
+                conex.setRequestMethod("GET");
+                conex.setDoOutput(true);
+                conex.connect();
                 try {
-                    lXPath = XPath.newInstance("//pmc-articleset");
-                    elem = (Element) lXPath.selectSingleNode(doc);
-                    if (elem == null) {
-                        throw new NoDataException("no se encontraron elementos DocumentSummary para el gen con nombre " + geneName);
-                    }
+                    InputStream in = conex.getInputStream();
+                    doc = getXML(in);
+                } catch (JDOMException jde) {
+                    doc = null;
+                } finally {
+                    conex.disconnect();
+                }
+                if (doc != null) {
+                    Element art, abs;
+                    String pmc, author, month, year, value;
+                    StringBuilder r;
+                    Document d;
+                    int rank;
 
-                    List<Element> pubmedArtList = elem.getChildren("article");
-                    for (Element pubmedArt : pubmedArtList) {
-                        pubmedArt.removeChild("body");
-                        pubmedArt.removeChild("back");
-                        elem = pubmedArt.getChild("front").getChild("article-meta");
-                        elem.removeChild("history");
-                        elem.removeChild("permissions");
-                        elem.removeChild("kwd-group");
-                        elem.removeChild("custom-meta-group");
-
-                        d = new Document((Element) (pubmedArt.clone()));
-                        //String pmid = pubmedArt.getChild("MedlineCitation").getChildText("PMID");
-                        //if(ids.contains(pmid)) {
-                        art = new Element("article");
-                        elem = new Element("title");
-                        elem.setText(pubmedArt.getChild("front").getChild("article-meta").getChild("title-group").getChild("article-title").getValue());
-                        art.addContent(elem);
-                        elem = new Element("pmid");
-                        lXPath = XPath.newInstance("//article-id[@pub-id-type=\"pmid\"]");
-                        elem.setText(((Element) lXPath.selectSingleNode(d)).getValue());
-                        art.addContent(elem);
-                        elem = new Element("pmc");
-                        lXPath = XPath.newInstance("//article-id[@pub-id-type=\"pmc\"]");
-                        pmc = ((Element) lXPath.selectSingleNode(d)).getValue();
-                        elem.setText(pmc);
-                        art.addContent(elem);
-                        elem = new Element("url");
-                        elem.setText("http://www.ncbi.nlm.nih.gov/pmc/articles/PMC" + pmc);
-                        art.addContent(elem);
-
-                        lXPath = XPath.newInstance("//contrib-group/contrib");
-                        nodes = lXPath.selectNodes(d);
-                        elem = nodes.get(0);
-                        if (elem.getChild("name") != null) {
-                            author = elem.getChild("name").getChildText("surname") + ", " + elem.getChild("name").getChildText("given-names");
-                            elem = new Element("author");
-                            elem.setText(author);
-                            art.addContent(elem);
-                        }
-
-                        r = new StringBuilder();
-                        for (Element e : nodes) {
-                            if (e.getChild("name") == null) {
-                                continue;
-                            }
-                            r.append(e.getChild("name").getChildText("surname")).append(", ").append(e.getChild("name").getChildText("given-names")).append("; ");
-                        }
-
-                        lXPath = XPath.newInstance("//pub-date[@pub-type='epub']");
-                        elem = (Element) lXPath.selectSingleNode(d);
+                    try {
+                        lXPath = XPath.newInstance("//pmc-articleset");
+                        elem = (Element) lXPath.selectSingleNode(doc);
                         if (elem == null) {
-                            lXPath = XPath.newInstance("//pub-date[@pub-type='ppub']");
+                            throw new NoDataException("no se encontraron elementos DocumentSummary para el gen con nombre " + geneName);
+                        }
+
+                        List<Element> pubmedArtList = elem.getChildren("article");
+                        for (Element pubmedArt : pubmedArtList) {
+                            pubmedArt.removeChild("body");
+                            pubmedArt.removeChild("back");
+                            elem = pubmedArt.getChild("front").getChild("article-meta");
+                            elem.removeChild("history");
+                            elem.removeChild("permissions");
+                            elem.removeChild("kwd-group");
+                            elem.removeChild("custom-meta-group");
+
+                            d = new Document((Element) (pubmedArt.clone()));
+                            //String pmid = pubmedArt.getChild("MedlineCitation").getChildText("PMID");
+                            //if(ids.contains(pmid)) {
+                            art = new Element("article");
+                            elem = new Element("title");
+                            elem.setText(pubmedArt.getChild("front").getChild("article-meta").getChild("title-group").getChild("article-title").getValue());
+                            art.addContent(elem);
+                            elem = new Element("pmid");
+                            lXPath = XPath.newInstance("//article-id[@pub-id-type=\"pmid\"]");
+                            elem.setText(((Element) lXPath.selectSingleNode(d)).getValue());
+                            art.addContent(elem);
+                            elem = new Element("pmc");
+                            lXPath = XPath.newInstance("//article-id[@pub-id-type=\"pmc\"]");
+                            pmc = ((Element) lXPath.selectSingleNode(d)).getValue();
+                            elem.setText(pmc);
+                            art.addContent(elem);
+                            elem = new Element("url");
+                            elem.setText("http://www.ncbi.nlm.nih.gov/pmc/articles/PMC" + pmc);
+                            art.addContent(elem);
+
+                            lXPath = XPath.newInstance("//contrib-group/contrib");
+                            nodes = lXPath.selectNodes(d);
+                            elem = nodes.get(0);
+                            if (elem.getChild("name") != null) {
+                                author = elem.getChild("name").getChildText("surname") + ", " + elem.getChild("name").getChildText("given-names");
+                                elem = new Element("author");
+                                elem.setText(author);
+                                art.addContent(elem);
+                            }
+
+                            r = new StringBuilder();
+                            for (Element e : nodes) {
+                                if (e.getChild("name") == null) {
+                                    continue;
+                                }
+                                r.append(e.getChild("name").getChildText("surname")).append(", ").append(e.getChild("name").getChildText("given-names")).append("; ");
+                            }
+
+                            lXPath = XPath.newInstance("//pub-date[@pub-type='epub']");
                             elem = (Element) lXPath.selectSingleNode(d);
                             if (elem == null) {
-                                lXPath = XPath.newInstance("//pub-date[starts-with(@pub-type, 'pmc')]");
+                                lXPath = XPath.newInstance("//pub-date[@pub-type='ppub']");
                                 elem = (Element) lXPath.selectSingleNode(d);
                                 if (elem == null) {
-                                    month = null;
-                                    year = null;
+                                    lXPath = XPath.newInstance("//pub-date[starts-with(@pub-type, 'pmc')]");
+                                    elem = (Element) lXPath.selectSingleNode(d);
+                                    if (elem == null) {
+                                        month = null;
+                                        year = null;
+                                    } else {
+                                        month = elem.getChildText("month");
+                                        year = elem.getChildText("year");
+                                    }
                                 } else {
                                     month = elem.getChildText("month");
                                     year = elem.getChildText("year");
@@ -1162,127 +1225,124 @@ public class ESearchImpl {
                                 month = elem.getChildText("month");
                                 year = elem.getChildText("year");
                             }
-                        } else {
-                            month = elem.getChildText("month");
-                            year = elem.getChildText("year");
-                        }
-                        if (year != null) {
-                            r.append("(").append(year).append(")");
-                        }
+                            if (year != null) {
+                                r.append("(").append(year).append(")");
+                            }
 
-                        lXPath = XPath.newInstance("//journal-meta/issn[@pub-type='epub']");
-                        elem = (Element) lXPath.selectSingleNode(d);
-                        if (elem == null) {
-                            lXPath = XPath.newInstance("//journal-meta/issn[@pub-type='ppub']");
+                            lXPath = XPath.newInstance("//journal-meta/issn[@pub-type='epub']");
                             elem = (Element) lXPath.selectSingleNode(d);
-                            if (elem != null) {
+                            if (elem == null) {
+                                lXPath = XPath.newInstance("//journal-meta/issn[@pub-type='ppub']");
+                                elem = (Element) lXPath.selectSingleNode(d);
+                                if (elem != null) {
+                                    r.append(". ISSN:");
+                                    r.append(elem.getValue());
+                                }
+                            } else {
                                 r.append(". ISSN:");
                                 r.append(elem.getValue());
                             }
-                        } else {
-                            r.append(". ISSN:");
-                            r.append(elem.getValue());
-                        }
 
-                        elem = pubmedArt.getChild("front").getChild("article-meta").getChild("volume");
-                        if (elem != null) {
-                            r.append(", vol.");
-                            r.append(elem.getValue());
-                        }
-
-                        elem = pubmedArt.getChild("front").getChild("article-meta").getChild("issue");
-                        if (elem != null) {
-                            r.append(", issue ");
-                            r.append(pubmedArt.getChild("front").getChild("article-meta").getChild("issue").getValue()).append(". ");
-                        }
-
-                        if (month != null) {
-                            try {
-                                r.append(Utils.Months[Integer.parseInt(month)]);
-                            } catch (Exception e) {
+                            elem = pubmedArt.getChild("front").getChild("article-meta").getChild("volume");
+                            if (elem != null) {
+                                r.append(", vol.");
+                                r.append(elem.getValue());
                             }
-                        }
-                        elem = new Element("reference");
-                        elem.setText(r.toString());
-                        art.addContent(elem);
 
-                        lXPath = XPath.newInstance("//abstract/sec");
-                        nodes = lXPath.selectNodes(d);
-                        if (nodes.isEmpty()) {
-                            if (pubmedArt.getChild("front").getChild("article-meta").getChild("abstract") == null) {
-                                continue;
+                            elem = pubmedArt.getChild("front").getChild("article-meta").getChild("issue");
+                            if (elem != null) {
+                                r.append(", issue ");
+                                r.append(pubmedArt.getChild("front").getChild("article-meta").getChild("issue").getValue()).append(". ");
+                            }
+
+                            if (month != null) {
+                                try {
+                                    r.append(Utils.Months[Integer.parseInt(month)]);
+                                } catch (Exception e) {
+                                }
+                            }
+                            elem = new Element("reference");
+                            elem.setText(r.toString());
+                            art.addContent(elem);
+
+                            lXPath = XPath.newInstance("//abstract/sec");
+                            nodes = lXPath.selectNodes(d);
+                            if (nodes.isEmpty()) {
+                                if (pubmedArt.getChild("front").getChild("article-meta").getChild("abstract") == null) {
+                                    continue;
+                                } else {
+                                    abs = new Element("abstract");
+
+                                    elem = new Element("label");
+                                    elem.setText("Unlabeled");
+                                    abs.addContent(elem);
+
+                                    elem = new Element("text");
+                                    value = pubmedArt.getChild("front").getChild("article-meta").getChild("abstract").getChildText("p");
+                                    elem.setText(value);
+                                    abs.addContent(elem);
+
+                                    elem = new Element("prognosis");
+                                    elem.setText(value.contains("prognosis") ? "1" : "0");
+                                    abs.addContent(elem);
+                                    elem = new Element("treatment");
+                                    elem.setText(value.contains("treatment") ? "1" : "0");
+                                    abs.addContent(elem);
+                                    elem = new Element("prediction");
+                                    elem.setText(value.contains("predict") ? "1" : "0");
+                                    abs.addContent(elem);
+
+                                    rank = Utils.getRanking(value, geneName, molecularAlt);
+                                    elem = new Element("rank");
+                                    elem.setText(Integer.toString(rank));
+                                    abs.addContent(elem);
+
+                                    art.addContent(abs);
+                                }
                             } else {
-                                abs = new Element("abstract");
+                                for (Element e : nodes) {
+                                    abs = new Element("abstract");
 
-                                elem = new Element("label");
-                                elem.setText("Unlabeled");
-                                abs.addContent(elem);
+                                    elem = new Element("label");
+                                    elem.setText(e.getChildText("title"));
+                                    abs.addContent(elem);
 
-                                elem = new Element("text");
-                                value = pubmedArt.getChild("front").getChild("article-meta").getChild("abstract").getChildText("p");
-                                elem.setText(value);
-                                abs.addContent(elem);
+                                    elem = new Element("text");
+                                    value = e.getChildText("p");
+                                    elem.setText(value);
+                                    abs.addContent(elem);
 
-                                elem = new Element("prognosis");
-                                elem.setText(value.contains("prognosis") ? "1" : "0");
-                                abs.addContent(elem);
-                                elem = new Element("treatment");
-                                elem.setText(value.contains("treatment") ? "1" : "0");
-                                abs.addContent(elem);
-                                elem = new Element("prediction");
-                                elem.setText(value.contains("predict") ? "1" : "0");
-                                abs.addContent(elem);
+                                    elem = new Element("prognosis");
+                                    elem.setText(value.contains("prognosis") ? "1" : "0");
+                                    abs.addContent(elem);
+                                    elem = new Element("treatment");
+                                    elem.setText(value.contains("treatment") ? "1" : "0");
+                                    abs.addContent(elem);
+                                    elem = new Element("prediction");
+                                    elem.setText(value.contains("predict") ? "1" : "0");
+                                    abs.addContent(elem);
 
-                                rank = Utils.getRanking(value, geneName, molecularAlt);
-                                elem = new Element("rank");
-                                elem.setText(Integer.toString(rank));
-                                abs.addContent(elem);
+                                    rank = Utils.getRanking(value, geneName, molecularAlt);
+                                    elem = new Element("rank");
+                                    elem.setText(Integer.toString(rank));
+                                    abs.addContent(elem);
 
-                                art.addContent(abs);
+                                    art.addContent(abs);
+                                }
                             }
-                        } else {
-                            for (Element e : nodes) {
-                                abs = new Element("abstract");
-
-                                elem = new Element("label");
-                                elem.setText(e.getChildText("title"));
-                                abs.addContent(elem);
-
-                                elem = new Element("text");
-                                value = e.getChildText("p");
-                                elem.setText(value);
-                                abs.addContent(elem);
-
-                                elem = new Element("prognosis");
-                                elem.setText(value.contains("prognosis") ? "1" : "0");
-                                abs.addContent(elem);
-                                elem = new Element("treatment");
-                                elem.setText(value.contains("treatment") ? "1" : "0");
-                                abs.addContent(elem);
-                                elem = new Element("prediction");
-                                elem.setText(value.contains("predict") ? "1" : "0");
-                                abs.addContent(elem);
-
-                                rank = Utils.getRanking(value, geneName, molecularAlt);
-                                elem = new Element("rank");
-                                elem.setText(Integer.toString(rank));
-                                abs.addContent(elem);
-
-                                art.addContent(abs);
-                            }
-                        }
-                        root.addContent(art);
-                        //res.addContent((Element)pubmedArt.clone());
-                        //ids.remove(pmid);
-                        //}
-                    } // for
-//XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
-//String xmlString = outputter.outputString(root);
-//System.out.println("\n\nres="+xmlString);
-                } catch (JDOMException jde) {
-                    throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
-                }
-            } // if efetch
+                            root.addContent(art);
+                            //res.addContent((Element)pubmedArt.clone());
+                            //ids.remove(pmid);
+                            //}
+                        } // for
+    //XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+    //String xmlString = outputter.outputString(root);
+    //System.out.println("\n\nres="+xmlString);
+                    } catch (JDOMException jde) {
+                        throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
+                    }
+                } // if efetch
+            } //if count > 0
         } // if esearch
         return root;
     }
@@ -1295,8 +1355,8 @@ public class ESearchImpl {
      * que se les extraerá su valor contenido y se agregará a una nueva lista.
      * @return La lista de valores contenidos en la lista de elementos hijos de
      * alguna jerarquía mayor.
-     * @throws com.nanopharmacia.eutility.impl.NoDataException
-     * @throws com.nanopharmacia.eutility.impl.UseHistoryException
+     * @throws org.nanopharmacy.eutility.impl.NoDataException
+     * @throws org.nanopharmacy.eutility.impl.UseHistoryException
      * @throws java.net.MalformedURLException
      * @throws java.net.ProtocolException
      * @throws java.io.IOException
@@ -1363,4 +1423,26 @@ public class ESearchImpl {
         return isValid;
     }
 
+    /**
+     * Genera la cadena correspondiente al criterio de alteracion molecular que se usara
+     * en las consultas a las bases de datos PubMed y PubMed Central
+     * @param molAlteration el simbolo de la alteracion molecular, junto con sus alias, separados por coma cada uno
+     * @return la cadena correspondiente al criterio de alteracion molecular que se usara
+     * en las consultas a las bases de datos PubMed y PubMed Central. Si {@code molAlteration} es una cadena nula o vacia
+     * se devuelve una cadena vacia.
+     */
+    private String getQueryValue(String molAlteration) {
+        
+        StringBuilder criteriaMA = new StringBuilder(64);
+        if (molAlteration != null && !molAlteration.isEmpty()) {
+            String[] aliases = molAlteration.split(",");
+
+            for (String alias : aliases) {
+                criteriaMA.append("%20OR%20%22");
+                criteriaMA.append(alias.replaceAll(">", "%3E"));
+                criteriaMA.append("%22%5BAll%20Fields%5D");
+            }
+        }
+        return criteriaMA.toString();
+    }
 }
