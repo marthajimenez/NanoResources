@@ -5,67 +5,27 @@
  */
 package org.nanopharmacy.utils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.xml.parsers.ParserConfigurationException;
 import org.jdom.Document;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.nanopharmacy.utils.Utils.BD;
+//import org.nanopharmacy.utils.Utils.BD;
 import org.semanticwb.datamanager.DataList;
 import org.semanticwb.datamanager.DataMgr;
 import org.semanticwb.datamanager.DataObject;
 import org.semanticwb.datamanager.SWBDataSource;
 import org.semanticwb.datamanager.SWBScriptEngine;
-import org.xml.sax.SAXException;
 
 /**
- *
+ * <p>Clase que contiene utiler&iacute;as para manejo de XML, ENG y Text.</p>
  * @author martha.jimenez
  */
 public class Utils {
-
-    /**
-     * Representa la definicion del User-Agent a utilizar en algunas peticiones
-     */
-    public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95";
-
-    /**
-     *
-     */
-    public static final String URL_ESEARCH = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi";
-
-    public static final String URL_ESUMMARY = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
-
-    /**
-     *
-     */
-    public static final String BD_GENE = "gene";
-
-    /**
-     * Specifies a default language to use.
-     * <p>
-     * Especifica un lenguaje a usar por defecto.</p>
-     */
-    private static Locale locale = Locale.ENGLISH;
 
     /**
      * Calcula el valor de relevancia de una publicación médica recuperada con
@@ -110,60 +70,28 @@ public class Utils {
     }
 
     /**
-     *
+     * Representa la abreviatura de los meses
      */
-    public enum BD {
-
-        GENE;
-
-        @Override
-        public String toString() {
-            if (this == GENE) {
-                return "gene";
-            }
-            return super.toString(); //To change body of generated methods, choose Tools | Templates.
-        }
-    }
-
     public static String[] Months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Agu", "Sep", "Oct", "Nov", "Dec"};
 
     /**
-     *
+     * <p>
+     * Provee funciones para la manipulaci&oacute;n de archivos XML.</p>
      */
     public static class XML {
 
         /**
-         *
-         * @param gene
-         * @return
-         */
-        public static HashMap<String, String> getParamsGene(String gene) {
-            HashMap<String, String> params = new HashMap<>(2);
-            String paramGene = "((" + gene
-                    + "[Gene Name]) AND homo sapiens[Organism]) AND alive[prop]";
-            params.put("db", BD.GENE + "");
-            params.put("term", paramGene);
-            params.put("usehistory", "y");
-            params.put("retmode", "xml");
-            return params;
-        }
-
-        public static HashMap<String, String> getParamsSummaryGene(String query_key, String webEnv) {
-            HashMap<String, String> params = new HashMap<>(2);
-            params.put("db", BD.GENE + "");
-            params.put("query_key", query_key);
-            params.put("WebEnv", webEnv);
-            params.put("retmode", "xml");
-            return params;
-        }
-
-        /**
-         *
-         * @param is
-         * @return
-         * @throws ParserConfigurationException
-         * @throws IOException
-         * @throws SAXException
+         * Convierte un objeto {@code InputStream} a un objeto {@code Document}
+         * 
+         * @param is objeto {@code InputStream} que ser&aacute; tranformado a 
+         * un objeto de tipo {@code Document}
+         * @return objeto {@code Document}
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         * @throws JDOMException si durante la transformaci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura del 
+         * documento.
          */
         public static org.jdom.Document getXML(InputStream is) throws IOException, JDOMException {
             SAXBuilder builder = new SAXBuilder();
@@ -174,184 +102,63 @@ public class Utils {
             return document;
         }
 
-        public static String getStringFromInputStream(InputStream is) {
-            BufferedReader br = null;
-            StringBuilder sb = new StringBuilder();
-
-            String line;
-            try {
-                br = new BufferedReader(new InputStreamReader(is));
-                while ((line = br.readLine()) != null) {
-                    sb.append(line);
-                }
-            } catch (IOException e) {
-                e.printStackTrace(System.out);
-            } finally {
-                if (br != null) {
-                    try {
-                        br.close();
-                    } catch (IOException e) {
-                        e.printStackTrace(System.out);
-                    }
-                }
-            }
-            return sb.toString();
-        }
-
-        /**
-         *
-         * @param params
-         * @param url
-         * @param userAgent
-         * @return
-         * @throws UnsupportedEncodingException
-         * @throws MalformedURLException
-         * @throws IOException
-         * @throws org.jdom.JDOMException
-         */
-        public static Document requestApiXML(HashMap<String, String> params, String url, String userAgent)
-                throws UnsupportedEncodingException, MalformedURLException, IOException, JDOMException {
-            CharSequence paramString = (null == params) ? "" : delimit(params.entrySet(), "&", "=", true);
-            URL serverUrl = new URL(paramString.length() > 0
-                    ? (url + "?" + paramString) : url);
-
-            Document dom = null;
-            HttpURLConnection conex = null;
-            try {
-                conex = (HttpURLConnection) serverUrl.openConnection();
-                if (userAgent != null) {
-                    conex.setRequestProperty("user-agent", userAgent);
-                }
-                conex.setConnectTimeout(30000);
-                conex.setReadTimeout(60000);
-                conex.setRequestMethod("GET");
-                conex.setDoOutput(true);
-                conex.connect();
-                try (InputStream in = conex.getInputStream()) {
-                    dom = getXML(in);
-                }
-            } finally {
-                if (conex != null) {
-                    conex.disconnect();
-                }
-            }
-            return dom;
-        }
-
-        /**
-         * Lee un flujo de datos y lo convierte en un {@code String} con su
-         * contenido codificado en UTF-8
-         *
-         * @param data el flujo de datos a convertir
-         * @return un {@code String} que representa el contenido del flujo de
-         * datos especificado, codificado en UTF-8
-         * @throws IOException si ocurre un problema en la lectura del flujo de
-         * datos
-         */
-        private static String getResponse(InputStream data) throws IOException {
-            StringBuilder response;
-            try (Reader in = new BufferedReader(new InputStreamReader(data, "UTF-8"))) {
-                response = new StringBuilder(256);
-                char[] buffer = new char[1000];
-                int charsRead = 0;
-                while (charsRead >= 0) {
-                    response.append(buffer, 0, charsRead);
-                    charsRead = in.read(buffer);
-                }
-            }
-            return response.toString();
-        }
-
-        /**
-         * En base al contenido de la colecci&oacute;n recibida, arma una
-         * secuencia de caracteres compuesta de los pares:
-         * <p>
-         * {@code Entry.getKey()} {@code equals} {@code Entry.getKey()} </p> Si
-         * en la colecci&oacute;n hay m&aacute;s de una entrada, los pares (como
-         * el anterior), se separan por {@code delimiter}.
-         *
-         * @param entries la colecci&oacute;n con la que se van a formar los
-         * pares
-         * @param delimiter representa el valor con que se van a separar los
-         * pares a representar
-         * @param equals representa el valor con el que se van a relacionar los
-         * elementos de cada par a representar
-         * @param doEncode indica si el valor representado en cada par, debe ser
-         * codificado (UTF-8) o no
-         * @return la secuencia de caracteres que representa el conjunto de
-         * pares
-         * @throws UnsupportedEncodingException en caso de ocurrir algun
-         * problema en la codificaci&oacute;n a UTF-8 del valor de alg&uacute;n
-         * par, si as&iacute; se indica en {@code doEncode}
-         */
-        private static CharSequence delimit(Collection<Map.Entry<String, String>> entries,
-                String delimiter, String equals, boolean doEncode)
-                throws UnsupportedEncodingException {
-
-            if (entries == null || entries.isEmpty()) {
-                return null;
-            }
-            StringBuilder buffer = new StringBuilder(64);
-            boolean notFirst = false;
-            for (Map.Entry<String, String> entry : entries) {
-                if (notFirst) {
-                    buffer.append(delimiter);
-                } else {
-                    notFirst = true;
-                }
-                CharSequence value = entry.getValue();
-                buffer.append(entry.getKey());
-                buffer.append(equals);
-                buffer.append(doEncode ? encode(value) : value);
-            }
-            return buffer;
-        }
-
-        /**
-         * Codifica el valor de {@code target} de acuerdo al c&oacute;digo de
-         * caracteres UTF-8
-         *
-         * @param target representa el texto a codificar
-         * @return un {@code String} que representa el valor de {@code target}
-         * de acuerdo al c&oacute;digo de caracteres UTF-8
-         * @throws UnsupportedEncodingException en caso de ocurrir algun
-         * problema en la codificaci&oacute;n a UTF-8
-         */
-        private static String encode(CharSequence target) throws UnsupportedEncodingException {
-
-            String result = "";
-            if (target != null) {
-                result = target.toString();
-                result = URLEncoder.encode(result, "UTF8");
-            }
-            return result;
-        }
     }
 
+    /*
+     * <p>
+     * Provee funciones para la manipulaci&oacute;n del API de ENG.</p>
+     */
     public static class ENG {
 
-        public static boolean isValidObject(String titleDataSource, String[] namesString, String[] values, 
-                String[] namesInt, int[] valuesInt) 
+        /**
+         * Valida que un registro con p&aacute;rametros espec&iacute;ficos
+         * exista en una tabla de la BD.
+         *
+         * @param titleDataSource representa el nombre de la tabla o
+         * {@code SWBDataSource}, en la cual se llevar&aacute; a cabo la
+         * b&uacute;squeda
+         * @param namesString arreglo de string con los nombres de las columnas
+         * en las que ser&aacute;n buscados los par&aacute;metros. Este arreglo
+         * contiene los nombres de las columnas que almacenen propiedades
+         * {@code String}
+         * @param values arreglo con los par&aacute;metros a buscar. Este
+         * arreglo contiene las propiedades de tipo {@code String}
+         * @param namesInt arreglo de string con los nombres de las columnas en
+         * las que ser&aacute;n buscados los par&aacute;metros. Este arreglo
+         * contiene los nombres de las columnas que almacenen propiedades
+         * {@code int}
+         * @param valuesInt arreglo con los par&aacute;metros a buscar. Este
+         * arreglo contiene las propiedades de tipo {@code int}
+         * @return {@code boolean} que representa si existe o no el registro con
+         * los par&aacute;metros proporcionados
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
+        public static boolean isValidObject(String titleDataSource, String[] namesString, String[] values,
+                String[] namesInt, int[] valuesInt)
                 throws IOException {
             boolean valid = false;
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource(titleDataSource);
 
-            DataObject query = new DataObject();
-            DataObject data = new DataObject();
-            query.put("data", data);
-            if (namesString != null) {
-                for (int i = 0; i < namesString.length; i++) {
-                    data.put(namesString[i], values[i]);
-                }
-            }
+            /*DataObject query = new DataObject();
+             DataObject data = new DataObject();
+             query.put("data", data);
+             if (namesString != null) {
+             for (int i = 0; i < namesString.length; i++) {
+             data.put(namesString[i], values[i]);
+             }
+             }
              if (namesInt != null) {
-                for (int i = 0; i < namesInt.length; i++) {
-                    data.put(namesInt[i], valuesInt[i]);
-                }
-            }
+             for (int i = 0; i < namesInt.length; i++) {
+             data.put(namesInt[i], valuesInt[i]);
+             }
+             }
 
-            DataObject obj = ds.fetch(query);
+             DataObject obj = ds.fetch(query);*/
+            DataObject obj = getDataProperty(ds, namesString, values, namesInt, valuesInt);
+
             int i = obj.getDataObject("response").getInt("totalRows");
             if (i == 0) {
                 valid = true;
@@ -359,6 +166,23 @@ public class Utils {
             return valid;
         }
 
+        /**
+         * Obtiene el identificador de un registro en BD a partir de alguna
+         * columna con valores &uacute;nicos.
+         *
+         * @param dataSource representa el nombre de la tabla o
+         * {@code SWBDataSource}, en la cual se llevar&aacute; a cabo la
+         * b&uacute;squeda
+         * @param property es el nombre de la columna que contiene valores
+         * &uacute;nicos
+         * @param valueProp representa el valor o par&aacute;metro que
+         * ser&aacute; buscado en la BD.
+         * @return el identificador del registro en BD, en caso no existir
+         * devuelve un null
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
         public static String getIdProperty(String dataSource, String property, String valueProp) throws IOException {
             String ret = null;
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
@@ -377,12 +201,32 @@ public class Utils {
                             break;
                         }
                     }
-                    
+
                 }
             }
             return ret;
         }
 
+        /**
+         * Obtiene un registro a una tabla de la BD, que coincida con un
+         * p&aacute;rametro proporcionado.
+         *
+         * @param ds representa un objeto SWBDataSource el cual define la tabla
+         * en la que se desea buscar el registro.
+         * @param property representa el nombre de las columna en la que
+         * ser&aacute; buscado el par&aacute;metro
+         * @param valueProp representa el par&aacute;metro a buscar. Si el
+         * par&aacute;metro no es de tipo {@code String}, el valor de esta
+         * propiedad deber&aacute; ser null.
+         * @param valProp representa el par&aacute;metro a buscar. Si el
+         * par&aacute;metro no es de tipo {@code int}, el valor de esta
+         * propiedad deber&aacute; ser 0.
+         * @return el resultado de la busqueda en BD,devuelto en un objeto
+         * {@code DataObject}
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
         public static DataObject getDataProperty(SWBDataSource ds, String property, String valueProp, int valProp) throws IOException {
             DataObject query = new DataObject();
             DataObject data = new DataObject();
@@ -393,6 +237,62 @@ public class Utils {
             return obj;
         }
 
+        /**
+         * Obtiene un registro a una tabla de la BD, que coincida con un
+         * conjunto de p&aacute;rametros proporcionados.
+         *
+         * @param ds representa un objeto SWBDataSource el cual define la tabla
+         * en la que se desea buscar el registro.
+         * @param namesString arreglo de string con los nombres de las columnas
+         * en las que ser&aacute;n buscados los par&aacute;metros. Este arreglo
+         * contiene los nombres de las columnas que almacenen propiedades
+         * {@code String}
+         * @param values arreglo con los par&aacute;metros a buscar. Este
+         * arreglo contiene las propiedades de tipo {@code String}
+         * @param namesInt arreglo de string con los nombres de las columnas en
+         * las que ser&aacute;n buscados los par&aacute;metros. Este arreglo
+         * contiene los nombres de las columnas que almacenen propiedades
+         * {@code int}
+         * @param valuesInt arreglo con los par&aacute;metros a buscar. Este
+         * arreglo contiene las propiedades de tipo {@code int}
+         * @return el resultado de la busqueda en BD,devuelto en un objeto
+         * {@code DataObject}
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
+        public static DataObject getDataProperty(SWBDataSource ds, String[] namesString, String[] values,
+                String[] namesInt, int[] valuesInt) throws IOException {
+            DataObject query = new DataObject();
+            DataObject data = new DataObject();
+
+            query.put("data", data);
+            if (namesString != null) {
+                for (int i = 0; i < namesString.length; i++) {
+                    data.put(namesString[i], values[i]);
+                }
+            }
+            if (namesInt != null) {
+                for (int i = 0; i < namesInt.length; i++) {
+                    data.put(namesInt[i], valuesInt[i]);
+                }
+            }
+            DataObject obj = ds.fetch(query);
+            return obj;
+        }
+
+        /**
+         * Guarda las enfermedades que esten asociadas a un Gen en
+         * espec&iacute;fico y que no existan en la BD de la aplicaci&oacute;n.
+         *
+         * @param publications Objeto JSON que define las publicaciones que
+         * ser&aacute;n guardadas para la b&uacute;squeda
+         * @param idSearch identificador de la b&uacute;squeda que ser&aacute;
+         * almacenada.
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
         public static void saveNewArticles(JSONObject publications, String idSearch) throws IOException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
@@ -402,7 +302,7 @@ public class Utils {
 
             JSONArray arrOutstanding = publications.getJSONArray("outstanding");
             int countNewArt = 0;
-            for (int i = 0; i < arrOutstanding.length(); i++) {//
+            for (int i = 0; i < arrOutstanding.length(); i++) {
                 JSONObject art = arrOutstanding.getJSONObject(i);
 
                 int pmid = 0, pmc = 0;
@@ -417,22 +317,27 @@ public class Utils {
                 DataObject dataNewArticle = new DataObject();
                 String idArticle = null;
                 int rows = 0;
+                //Hace una petición a la BD a traves de la propiedad "pmid" del artículo
                 if (pmid != 0) {
                     obj = getDataProperty(ds, "pmid", null, pmid);
                     rows = obj.getDataObject("response").getInt("totalRows");
                 }
+                //Sino trae información la consulta, hace una segunda petición a la BD a traves
+                // de la propiedad "pmcid"
                 if (rows == 0 && pmc != 0) {
                     obj = getDataProperty(ds, "pmcid", null, pmc);
                     rows = obj.getDataObject("response").getInt("totalRows");
                 }
                 if (rows == 0) {
-                    //Guardar el objeto Article
+                    //Si el articulo no existe, guardar el objeto 
                     dataNewArticle = setPropArticle(ds, art, pmid, pmc);
                     idArticle = dataNewArticle.getDataObject("response").getDataObject("data").getString("_id");
                 } else {
+                    //si ya existe el articulo, obtiene la información del artículo
                     dataNewArticle = obj;
                     idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
                 }
+                //almacena la asociación entre una búsqueda y un artículo
                 DataObject newArtSearch = new DataObject();
                 newArtSearch.put("search", idSearch);
                 newArtSearch.put("article", idArticle);
@@ -441,16 +346,29 @@ public class Utils {
                 dsArtSearch.addObj(newArtSearch);
                 countNewArt++;
             }
+            //asigna el número de artículos nuevos
             datObjSearch.put("notification", countNewArt);
             dsSearch.updateObj(datObjSearch);
         }
 
+        /**
+         * Actualiza las enfermedades que esten asociadas a un Gen en
+         * espec&iacute;fico y que no existan en la BD de la aplicaci&oacute;n.
+         *
+         * @param publications Objeto JSON que define las publicaciones que
+         * ser&aacute;n actualizadas para la b&uacute;squeda
+         * @param idSearch identificador de la b&uacute;squeda que ser&aacute;
+         * actualizada.
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
         public static void saveUpdateArticles(JSONObject publications, String idSearch) throws IOException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
             SWBDataSource dsSearch = engine.getDataSource("Search");
             SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
-            DataObject datObjSearch = dsSearch.fetchObjById(idSearch);//Es la busqueda
+            DataObject datObjSearch = dsSearch.fetchObjById(idSearch);
 
             JSONArray arrOutstanding = publications.getJSONArray("outstanding");
             int countNewArt = 0;
@@ -471,27 +389,30 @@ public class Utils {
                 String idArticle = null;
                 int status = 0;
                 int rows = 0;
-                //Revisa que el articulo ya este dado de alta en la BD
+                //Hace una petición a la BD a traves de la propiedad "pmid" del artículo
                 if (pmid != 0) {
                     obj = getDataProperty(ds, "pmid", null, pmid);
                     rows = obj.getDataObject("response").getInt("totalRows");
                 }
+                //Sino trae información la consulta, hace una segunda petición a la BD a traves
+                // de la propiedad "pmcid"
                 if (rows == 0 && pmc != 0) {
                     obj = getDataProperty(ds, "pmcid", null, pmc);
                     rows = obj.getDataObject("response").getInt("totalRows");
                 }
 
                 if (rows == 0) {
-                    //Guardar el objeto Article
+                    //Si el articulo no existe, guardar el objeto 
                     dataNewArticle = setPropArticle(ds, art, pmid, pmc);
                     idArticle = dataNewArticle.getDataObject("response").getDataObject("data").getString("_id");
                     status = 1;
                     countNewArt++;
                 } else {
-                    //si ya existe el articulo
+                    //si ya existe el articulo, obtiene la información del artículo
                     dataNewArticle = obj;
                     idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
 
+                    //Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con la siguiente enfermedad 
                     DataObject obj1 = getDataProperty(dsArtSearch, "article", idArticle, 0);
                     rows = obj1.getDataObject("response").getInt("totalRows");
                     int datRanking = 0, datStatus = 0;
@@ -524,6 +445,7 @@ public class Utils {
                         continue;
                     }
                 }
+                //almacena la asociación entre una búsqueda y un artículo
                 DataObject newArtSearch = new DataObject();
                 newArtSearch.put("search", idSearch);
                 newArtSearch.put("article", idArticle);
@@ -532,12 +454,32 @@ public class Utils {
                 dsArtSearch.addObj(newArtSearch);
 
             }
+            //asigna el número de artículos nuevos y recomendados
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
             dsSearch.updateObj(datObjSearch);
         }
 
-        private static DataObject setPropArticle(SWBDataSource ds, JSONObject art, int pmid, int pmc) throws IOException {
+        /**
+         * Se encarga de asignar las propiedades de un art&iacute;culo para
+         * agregar un registro en la BD.
+         *
+         * @param ds DataSource que define los art&iacute;culos en la BD de la
+         * aplicaci&oacute;n.
+         * @param art Objeto JSON que define las caracter&iacute;sticas de un
+         * art&iacute;culo obtenidas desde la BD de NCBI (pubmed y pmc)
+         * @param pmid n&uacute;mero de identificador utilizado comunmente en la
+         * BD de pubmed
+         * @param pmc n&uacute;mero de identificador utilizado comunmente en la
+         * BD de pmc
+         * @return un DataObject que contiene la informaci&oacute;n del nuevo
+         * art&iacute;culo almacenado en la BD de la aplicaci&oacute;n
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
+        private static DataObject setPropArticle(SWBDataSource ds, JSONObject art,
+                int pmid, int pmc) throws IOException {
             DataObject newArticle = new DataObject();
             DataObject dataNewArticle = new DataObject();
             if (pmid != 0) {
@@ -547,13 +489,13 @@ public class Utils {
                 newArticle.put("pmcid", pmc);
             }
             if (art.has("articleTitle")) {
-                newArticle.put("title", parseTextJson(art.getString("articleTitle")));
+                newArticle.put("title", TEXT.replaceSpecialCharacters((art.getString("articleTitle")), false));
             }
             if (art.has("url")) {
                 newArticle.put("link", art.getString("url"));
             }
             if (art.has("reference")) {
-                newArticle.put("reference", parseTextJson(art.getString("reference")));
+                newArticle.put("reference", TEXT.replaceSpecialCharacters((art.getString("reference")), false));
             }
             if (art.has("author")) {
                 newArticle.put("autor", art.getString("author"));
@@ -573,10 +515,10 @@ public class Utils {
             for (int j = 0; j < abstractTxt.length(); j++) {
                 JSONObject abstTxt = abstractTxt.getJSONObject(j);
                 sbf.append(abstTxt.getString("label"));
-                sbf.append(parseTextJson(abstTxt.getString("text")));
+                sbf.append(abstTxt.getString("text"));
             }
             if (sbf.length() > 0) {
-                newArticle.put("abstract", parseTextJson(sbf.toString()));
+                newArticle.put("abstract", TEXT.replaceSpecialCharacters(sbf.toString(), false));
             }
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());
@@ -585,6 +527,18 @@ public class Utils {
             return dataNewArticle;
         }
 
+        /**
+         * Agrega las enfermedades asociadas a un Gen en la BD de la
+         * aplicaci&oacute;n.
+         *
+         * @param arrayDiseases JSONArray que contiene la estructura de las
+         * enfermedades asociadas al gen.
+         * @param idGene simbolo del gen al cual est&aacute;n asociadas las
+         * enfermedades.
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
         public static void setNewDisease(JSONArray arrayDiseases, String idGene) throws IOException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("CancerType");
@@ -606,10 +560,12 @@ public class Utils {
                 }
 
                 if (conceptId != null && !conceptId.isEmpty()) {
+                    //Consulta que exista la enfermedad en BD.
                     DataObject newDisease = getDataProperty(ds, "conceptId", conceptId, 0);
                     int rows = newDisease.getDataObject("response").getInt("totalRows");
                     String idDisease = null;
                     if (rows == 0) {
+                        //Sino existe la enfermedad la agrega a la BD de la aplicaci&oacute;n
                         newDisease = new DataObject();
                         newDisease.put("name", title);
                         newDisease.put("summary", definition);
@@ -620,8 +576,10 @@ public class Utils {
                         newDisease = ds.addObj(newDisease);
                         idDisease = newDisease.getDataObject("response").getDataObject("data").getString("_id");
                     } else {
+                        //Si existe devuelve el identificador 
                         idDisease = newDisease.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
                     }
+                    //Asocia la enfermedad al Gen
                     DataObject newGeneCancer = new DataObject();
                     newGeneCancer.put("gene", idGene);
                     newGeneCancer.put("cancer", idDisease);
@@ -630,6 +588,18 @@ public class Utils {
             }
         }
 
+        /**
+         * Actualiza las enfermedades que esten asociadas a un Gen en
+         * espec&iacute;fico y que no existan en la BD de la aplicaci&oacute;n.
+         *
+         * @param arrayDiseases JSONArray que contiene la estructura de las
+         * enfermedades asociadas al gen.
+         * @param idGene simbolo del gen al cual est&aacute;n asociadas las
+         * enfermedades.
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
         public static void setUpdateDisease(JSONArray arrayDiseases, String idGene) throws IOException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("CancerType");
@@ -651,10 +621,12 @@ public class Utils {
                 }
 
                 if (conceptId != null && !conceptId.isEmpty()) {
+                    //Consulta que exista la enfermedad en BD.
                     DataObject newDisease = getDataProperty(ds, "conceptId", conceptId, 0);
                     int rows = newDisease.getDataObject("response").getInt("totalRows");
                     String idDisease = null;
                     if (rows == 0) {
+                        //Sino existe la enfermedad, la almacena
                         newDisease = new DataObject();
                         newDisease.put("name", title);
                         newDisease.put("summary", definition);
@@ -665,27 +637,38 @@ public class Utils {
                         newDisease = ds.addObj(newDisease);
                         idDisease = newDisease.getDataObject("response").getDataObject("data").getString("_id");
                     } else {
+                        //Si la enfermedad existe, obtiene su identificador de la consulta a la tabla de Enfermedades
                         idDisease = newDisease.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
 
-                        DataObject obj1 = getDataProperty(dsGeneCancer, "cancer", idDisease, 0);
+                        //Consulta la tabla de asociación entre enfermedades y genes y si ya existe la relación, continua con la siguiente enfermedad 
+                        String[] propertiesName = {"cancer", "gene"};
+                        String[] propertiesValues = {idDisease, idGene};
+                        DataObject obj1 = getDataProperty(dsGeneCancer, propertiesName, propertiesValues, null, null);
                         rows = obj1.getDataObject("response").getInt("totalRows");
-                        boolean isValid = true;
-
                         if (rows > 0) {
-                            DataList list = obj1.getDataObject("response").getDataList("data");
-                            for (int j = 0; j < list.size(); j++) {
-                                DataObject cancerList = list.getDataObject(j);
-                                if (cancerList.getString("gene") != null && cancerList.getString("gene").equals(idGene)) {
-                                    isValid = false;
-                                    break;
-                                }
-                            }
-                        }
-                        //Compara que el cancer y gen sean el mismo registro
-                        if (!isValid) {
                             continue;
                         }
+                        /*DataObject obj1 = getDataProperty(dsGeneCancer, "cancer", idDisease, 0);
+                         rows = obj1.getDataObject("response").getInt("totalRows");
+                         boolean isValid = true;
+
+                         if (rows > 0) {
+                         DataList list = obj1.getDataObject("response").getDataList("data");
+                         for (int j = 0; j < list.size(); j++) {
+                         DataObject cancerList = list.getDataObject(j);
+                         //Recorre 
+                         if (cancerList.getString("gene") != null && cancerList.getString("gene").equals(idGene)) {
+                         isValid = false;
+                         break;
+                         }
+                         }
+                         }
+                         //Compara que el cancer y gen sean el mismo registro
+                         if (!isValid) {
+                         continue;
+                         }*/
                     }
+                    //Agrega la relación del gen y cancer la BD
                     DataObject newGeneCancer = new DataObject();
                     newGeneCancer.put("gene", idGene);
                     newGeneCancer.put("cancer", idDisease);
@@ -693,128 +676,112 @@ public class Utils {
                 }
             }
         }
-
-        private static String parseTextJson(String txt) {
-            txt = txt.replaceAll("\"", "&quot;");
-            txt = txt.replaceAll('\u0022' + "", "&quot;");
-            txt = txt.replaceAll('\u201c' + "", "&quot;");
-            txt = txt.replaceAll('\u201d' + "", "&quot;");
-            //txt = txt.replaceAll('\u201e' +"", "\\\"");
-            txt = txt.replaceAll('\u201f' + "", "&quot;");
-            txt = txt.replaceAll('\u275d' + "", "&quot;");
-            txt = txt.replaceAll('\u275e' + "", "&quot;");
-            txt = txt.replaceAll('\u301d' + "", "&quot;");
-            txt = txt.replaceAll('\u301e' + "", "&quot;");
-            txt = txt.replaceAll('\uff02' + "", "&quot;");
-            return txt;
-        }
-
     }
 
+    /**
+     * <p>
+     * Provee funciones para la manipulaci&oacute;n de cadenas de texto tal como
+     * reemplazo.</p>
+     */
     public static class TEXT {
 
         /**
-         * Obtains the month's name corresponding to the number received
-         * specifying the month of the year. The first month of the year is
-         * January and its corresponding number is zero.
-         * <p>
-         * Obtiene el nombre del mes correspondiente al n&uacute;mero recibido
-         * especificando el mes del a&ntilde;o. El primer mes del a&ntilde;o es
-         * Enero y le corresponde el n&uacute;mero cero.</p>
+         * Reemplaza caracteres acentuados y espacios en blanco en {@code txt}.
+         * Realiza los cambios respetando caracteres en may&uacute;sculas o
+         * min&uacute;sculas los caracteres en blanco son reemplazados por
+         * guiones bajos, cualquier s&iacute;mbolo diferente a gui&oacute;n bajo
+         * es eliminado. <br>
          *
-         * @param month the number of the month of the year
-         * @param lang a string representing a language for obtaining the
-         * corresponding name
-         * @return a string representing the name of the month specified.
+         * @param txt cadena con los caracteres que ser&aacute;n reemplazados
+         * @param replaceSpaces indica si los espacios en blanco ser&oacute;n
+         * reemplazados
+         * @return una cadena sin caracteres especiales
          *
          */
-        /*public static String getStrMonth(int month, String lang)
-         {
-         if (lang != null)
-         {
-         return getLocaleString("locale_date", "month_" + month, new Locale(lang));
-         }
-         else
-         {
-         return getLocaleString("locale_date", "month_" + month);
-         }
-         }*/
-        /**
-         * Gets the value for a {@code key} in the specified {@code Bundle} with
-         * the default {@code locale}.
-         * <p>
-         * Obtiene el valor correspondiente al {@code key} especificado con el
-         * objeto {@code locale} utilizado por defecto.</p>
-         *
-         * @param Bundle a string specifying the bundle that contains the data
-         * to retrieve
-         * @param key a string indicating the key name whose value is required
-         * @return a string representing the specified {@code key}'s value
-         * stored in {@code Bundle}. un objeto string que representa el valor
-         * del elemento {@code key} especificado almacenado en {@code Bundle}.
-         */
-        public static String getLocaleString(String Bundle, String key) {
-            return getLocaleString(Bundle, key, Utils.locale);
-        }
+        public static String replaceSpecialCharacters(String txt, boolean replaceSpaces) {
+            StringBuffer ret = new StringBuffer();
+            String aux = txt;
+            //aux = aux.toLowerCase();
+            aux = aux.replace('Á', 'A');
+            aux = aux.replace('Ä', 'A');
+            aux = aux.replace('Å', 'A');
+            aux = aux.replace('Â', 'A');
+            aux = aux.replace('À', 'A');
+            aux = aux.replace('Ã', 'A');
 
-        /**
-         * Gets the value for a {@code key} in the specified {@code Bundle} with
-         * the indicated {@code locale}.
-         * <p>
-         * Obtiene el valor correspondiente al {@code key} especificado con el
-         * objeto {@code locale} indicado.</p>
-         *
-         * @param Bundle a string specifying the bundle that contains the data
-         * to retrieve
-         * @param key a string indicating the key name whose value is required
-         * @param locale the locale that will be used to retrieve the
-         * {@code key} specified
-         * @return a string representing the specified {@code key}'s value
-         * stored in {@code Bundle} in the language indicated by {@code locale}.
-         * un objeto string que representa el valor del elemento {@code key}
-         * especificado almacenado en {@code Bundle}.
-         */
-        public static String getLocaleString(String Bundle, String key, Locale locale) {
-            return getLocaleString(Bundle, key, locale, null);
-        }
+            aux = aux.replace('É', 'E');
+            aux = aux.replace('Ê', 'E');
+            aux = aux.replace('È', 'E');
+            aux = aux.replace('Ë', 'E');
 
-        /**
-         * Gets the value for a {@code key} in the specified {@code Bundle} with
-         * the indicated {@code locale} and class loader.
-         * <p>
-         * Obtiene el valor correspondiente al {@code key} especificado con los
-         * objetos {@code locale} y {@code loader} indicados.</p>
-         *
-         * @param Bundle a string specifying the bundle that contains the data
-         * to retrieve
-         * @param key a string indicating the key name whose value is required
-         * @param locale the locale that will be used to retrieve the
-         * {@code key} specified
-         * @param loader the class loader from which the resource bundle is
-         * loaded
-         * @return a string representing the specified {@code key}'s value
-         * stored in {@code Bundle} in the language indicated by {@code locale}.
-         * un objeto string que representa el valor del elemento {@code key}
-         * especificado almacenado en {@code Bundle}.
-         */
-        public static String getLocaleString(String Bundle, String key,
-                Locale locale, ClassLoader loader) {
+            aux = aux.replace('Í', 'I');
+            aux = aux.replace('Î', 'I');
+            aux = aux.replace('Ï', 'I');
+            aux = aux.replace('Ì', 'I');
 
-            String cad = "";
-            try {
-                if (loader == null) {
-                    cad = java.util.ResourceBundle.getBundle(Bundle, locale).getString(key);
-                } else {
-                    cad = java.util.ResourceBundle.getBundle(Bundle, locale, loader).getString(key);
-                }
-                //System.out.println("cad:" + cad);
-            } catch (Exception e) {
-                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, "Error while looking for properties key:{0} in {1}", new Object[]{key, Bundle});
-                //SWBUtils.log.error("Error while looking for properties key:" + key + " in " + Bundle);
-                return "";
+            aux = aux.replace('Ó', 'O');
+            aux = aux.replace('Ö', 'O');
+            aux = aux.replace('Ô', 'O');
+            aux = aux.replace('Ò', 'O');
+            aux = aux.replace('Õ', 'O');
+
+            aux = aux.replace('Ú', 'U');
+            aux = aux.replace('Ü', 'U');
+            aux = aux.replace('Û', 'U');
+            aux = aux.replace('Ù', 'U');
+
+            aux = aux.replace('Ñ', 'N');
+
+            aux = aux.replace('Ç', 'C');
+            aux = aux.replace('Ý', 'Y');
+
+            aux = aux.replace('á', 'a');
+            aux = aux.replace('à', 'a');
+            aux = aux.replace('ã', 'a');
+            aux = aux.replace('â', 'a');
+            aux = aux.replace('ä', 'a');
+            aux = aux.replace('å', 'a');
+
+            aux = aux.replace('é', 'e');
+            aux = aux.replace('è', 'e');
+            aux = aux.replace('ê', 'e');
+            aux = aux.replace('ë', 'e');
+
+            aux = aux.replace('í', 'i');
+            aux = aux.replace('ì', 'i');
+            aux = aux.replace('î', 'i');
+            aux = aux.replace('ï', 'i');
+
+            aux = aux.replace('ó', 'o');
+            aux = aux.replace('ò', 'o');
+            aux = aux.replace('ô', 'o');
+            aux = aux.replace('ö', 'o');
+            aux = aux.replace('õ', 'o');
+
+            aux = aux.replace('ú', 'u');
+            aux = aux.replace('ù', 'u');
+            aux = aux.replace('ü', 'u');
+            aux = aux.replace('û', 'u');
+
+            aux = aux.replace('ñ', 'n');
+
+            aux = aux.replace('ç', 'c');
+            aux = aux.replace('ÿ', 'y');
+            aux = aux.replace('ý', 'y');
+
+            if (replaceSpaces) {
+                aux = aux.replace(' ', '_');
             }
-            return cad;
+            int l = aux.length();
+            for (int x = 0; x < l; x++) {
+                char ch = aux.charAt(x);
+                if ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z')
+                        || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == '-') {
+                    ret.append(ch);
+                }
+            }
+            aux = ret.toString();
+            return aux;
         }
-
     }
 }

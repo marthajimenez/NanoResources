@@ -341,13 +341,6 @@ public class ESearchImpl {
             List<Element> docSumList = docSumSet.getChildren("DocumentSummary");
             for (Element docSum : docSumList) {
                 alteration = new JSONObject();
-                /*List itChilds = docSum.getChildren();
-                 Iterator itChilds1 = itChilds.iterator();
-                 System.out.println("------------------------");
-                 while (itChilds1.hasNext()) {
-                 Object next = itChilds1.next();
-                 System.out.println("child: " + next.toString());
-                 }*/
                 try {
                     alteration.put("title", docSum.getChildText("Title"));
                     alteration.put("definition", docSum.getChildText("Definition"));
@@ -357,11 +350,6 @@ public class ESearchImpl {
                     Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
                 }
             }
-            /*try {
-             data.put("alterations", alterations);
-             }catch(JSONException jse) {
-             throw new NoDataException("no se pudo crear el objeto json");
-             }*/
         }
         return diseases;
     }
@@ -1370,9 +1358,9 @@ public class ESearchImpl {
     }
     
     /**
-     * 
-     * @param geneName
-     * @return
+     * Valida la existencia de un gen en la BD.
+     * @param geneName Simbolo del gen a validar
+     * @return true en caso de existir y false caso contrario
      * @throws NoDataException
      * @throws UseHistoryException
      * @throws MalformedURLException
