@@ -22,7 +22,9 @@ import org.semanticwb.datamanager.SWBDataSource;
 import org.semanticwb.datamanager.SWBScriptEngine;
 
 /**
- * <p>Clase que contiene utiler&iacute;as para manejo de XML, ENG y Text.</p>
+ * <p>
+ * Clase que contiene utiler&iacute;as para manejo de XML, ENG y Text.</p>
+ *
  * @author martha.jimenez
  */
 public class Utils {
@@ -82,15 +84,15 @@ public class Utils {
 
         /**
          * Convierte un objeto {@code InputStream} a un objeto {@code Document}
-         * 
-         * @param is objeto {@code InputStream} que ser&aacute; tranformado a 
-         * un objeto de tipo {@code Document}
+         *
+         * @param is objeto {@code InputStream} que ser&aacute; tranformado a un
+         * objeto de tipo {@code Document}
          * @return objeto {@code Document}
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
          * @throws JDOMException si durante la transformaci&oacute;n ocurre
-         * alg&uacute;n problema con la generaci&oacute;n o escritura del 
+         * alg&uacute;n problema con la generaci&oacute;n o escritura del
          * documento.
          */
         public static org.jdom.Document getXML(InputStream is) throws IOException, JDOMException {
@@ -412,6 +414,14 @@ public class Utils {
                     dataNewArticle = obj;
                     idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
 
+                    //Consulta la tabla de asociación entre enfermedades y genes y si ya existe la relación, continua con la siguiente enfermedad 
+                    /*String[] propertiesName = {"cancer", "search"};
+                    String[] propertiesValues = {idArticle, idSearch};
+                    DataObject obj1 = getDataProperty(dsArtSearch, propertiesName, propertiesValues, null, null);
+                    rows = obj1.getDataObject("response").getInt("totalRows");
+                    if (rows > 0) {
+                        continue;
+                    }*/
                     //Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con la siguiente enfermedad 
                     DataObject obj1 = getDataProperty(dsArtSearch, "article", idArticle, 0);
                     rows = obj1.getDataObject("response").getInt("totalRows");
@@ -489,13 +499,13 @@ public class Utils {
                 newArticle.put("pmcid", pmc);
             }
             if (art.has("articleTitle")) {
-                newArticle.put("title", TEXT.replaceSpecialCharacters((art.getString("articleTitle")), false));
+                newArticle.put("title", TEXT.replaceSpecialCharacters((art.getString("articleTitle")), true));
             }
             if (art.has("url")) {
                 newArticle.put("link", art.getString("url"));
             }
             if (art.has("reference")) {
-                newArticle.put("reference", TEXT.replaceSpecialCharacters((art.getString("reference")), false));
+                newArticle.put("reference", TEXT.replaceSpecialCharacters((art.getString("reference")), true));
             }
             if (art.has("author")) {
                 newArticle.put("autor", art.getString("author"));
@@ -518,7 +528,7 @@ public class Utils {
                 sbf.append(abstTxt.getString("text"));
             }
             if (sbf.length() > 0) {
-                newArticle.put("abstract", TEXT.replaceSpecialCharacters(sbf.toString(), false));
+                newArticle.put("abstract", TEXT.replaceSpecialCharacters(sbf.toString(), true));
             }
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());

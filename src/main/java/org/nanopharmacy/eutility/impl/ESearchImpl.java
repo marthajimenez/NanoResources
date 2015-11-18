@@ -142,7 +142,7 @@ public class ESearchImpl {
 
     public static final String CMD_ESearchGene = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=" +
             Token_DbNAME + "&term=((" + Token_GENE +
-            "%5BGene%5D)%20AND%20homo%20sapiens%5BOrganism%5D)%20AND%20alive%5Bprop%5D&retmode=xml";
+            "%5BGene%20Name%5D)%20AND%20homo%20sapiens%5BOrganism%5D)%20AND%20alive%5Bprop%5D&retmode=xml";
 
     /**
      * Toma la url CMD_ESearchP y remplaza los tokens <code>Token_LY</code>,
@@ -1047,7 +1047,7 @@ public class ESearchImpl {
         spec = spec.replaceFirst(TOKEN_ALTMOL, getQueryValue(molecularAlt));
         spec = spec.replaceFirst(Token_DbNAME, dbName);
         spec = spec.replaceFirst(Token_GENE, geneName);
-        System.out.println("\nURL:\n" + spec);
+        //System.out.println("\nURL:\n" + spec);
         cmd = new URL(spec);
         conex = (HttpURLConnection) cmd.openConnection();
         conex.setConnectTimeout(30000);
