@@ -7,6 +7,7 @@ package org.nanopharmacy.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import org.jdom.Document;
@@ -295,7 +296,7 @@ public class Utils {
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
          */
-        public static void saveNewArticles(JSONObject publications, String idSearch) throws IOException {
+        public static int saveNewArticles(JSONObject publications, String idSearch) throws IOException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
             SWBDataSource dsSearch = engine.getDataSource("Search");
@@ -351,6 +352,7 @@ public class Utils {
             //asigna el número de artículos nuevos
             datObjSearch.put("notification", countNewArt);
             dsSearch.updateObj(datObjSearch);
+            return countNewArt;
         }
 
         /**
@@ -499,13 +501,13 @@ public class Utils {
                 newArticle.put("pmcid", pmc);
             }
             if (art.has("articleTitle")) {
-                newArticle.put("title", TEXT.replaceSpecialCharacters((art.getString("articleTitle")), true));
+                newArticle.put("title", TEXT.replaceSpecialCharacters((art.getString("articleTitle"))));
             }
             if (art.has("url")) {
                 newArticle.put("link", art.getString("url"));
             }
             if (art.has("reference")) {
-                newArticle.put("reference", TEXT.replaceSpecialCharacters((art.getString("reference")), true));
+                newArticle.put("reference", TEXT.replaceSpecialCharacters((art.getString("reference"))));
             }
             if (art.has("author")) {
                 newArticle.put("autor", art.getString("author"));
@@ -528,7 +530,7 @@ public class Utils {
                 sbf.append(abstTxt.getString("text"));
             }
             if (sbf.length() > 0) {
-                newArticle.put("abstract", TEXT.replaceSpecialCharacters(sbf.toString(), true));
+                newArticle.put("abstract", TEXT.replaceSpecialCharacters(sbf.toString()));
             }
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());
@@ -703,12 +705,10 @@ public class Utils {
          * es eliminado. <br>
          *
          * @param txt cadena con los caracteres que ser&aacute;n reemplazados
-         * @param replaceSpaces indica si los espacios en blanco ser&oacute;n
-         * reemplazados
          * @return una cadena sin caracteres especiales
          *
          */
-        public static String replaceSpecialCharacters(String txt, boolean replaceSpaces) {
+        public static String replaceSpecialCharacters(String txt) {
             StringBuffer ret = new StringBuffer();
             String aux = txt;
             //aux = aux.toLowerCase();
@@ -779,9 +779,7 @@ public class Utils {
             aux = aux.replace('ÿ', 'y');
             aux = aux.replace('ý', 'y');
 
-            if (replaceSpaces) {
-                aux = aux.replace(' ', '_');
-            }
+            aux = aux.replaceAll(" ", "__");
             int l = aux.length();
             for (int x = 0; x < l; x++) {
                 char ch = aux.charAt(x);
@@ -791,6 +789,7 @@ public class Utils {
                 }
             }
             aux = ret.toString();
+            aux = aux.replaceAll("__", " ");
             return aux;
         }
     }
