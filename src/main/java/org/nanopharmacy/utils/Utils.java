@@ -7,6 +7,7 @@ package org.nanopharmacy.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -21,6 +22,7 @@ import org.semanticwb.datamanager.DataMgr;
 import org.semanticwb.datamanager.DataObject;
 import org.semanticwb.datamanager.SWBDataSource;
 import org.semanticwb.datamanager.SWBScriptEngine;
+import org.nanopharmacy.util.parser.html.HTMLParser;
 
 /**
  * <p>
@@ -29,6 +31,15 @@ import org.semanticwb.datamanager.SWBScriptEngine;
  * @author martha.jimenez
  */
 public class Utils {
+
+    /**
+     * Defines the size used for creating arrays that will be used in I/O
+     * operations.
+     * <p>
+     * Define el tama&ntilde;o utilizado en la creaci&oacute;n de arrays que
+     * ser&aacute;n utilizados en operaciones de entrada/salida.</p>
+     */
+    private static int bufferSize = 8192;
 
     /**
      * Calcula el valor de relevancia de una publicación médica recuperada con
@@ -296,7 +307,7 @@ public class Utils {
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
          */
-        public static int saveNewArticles(JSONObject publications, String idSearch) throws IOException {
+        public static int saveNewArticles(JSONObject publications, String idSearch) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
             SWBDataSource dsSearch = engine.getDataSource("Search");
@@ -367,7 +378,7 @@ public class Utils {
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
          */
-        public static void saveUpdateArticles(JSONObject publications, String idSearch) throws IOException {
+        public static void saveUpdateArticles(JSONObject publications, String idSearch) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
             SWBDataSource dsSearch = engine.getDataSource("Search");
@@ -418,12 +429,12 @@ public class Utils {
 
                     //Consulta la tabla de asociación entre enfermedades y genes y si ya existe la relación, continua con la siguiente enfermedad 
                     /*String[] propertiesName = {"cancer", "search"};
-                    String[] propertiesValues = {idArticle, idSearch};
-                    DataObject obj1 = getDataProperty(dsArtSearch, propertiesName, propertiesValues, null, null);
-                    rows = obj1.getDataObject("response").getInt("totalRows");
-                    if (rows > 0) {
-                        continue;
-                    }*/
+                     String[] propertiesValues = {idArticle, idSearch};
+                     DataObject obj1 = getDataProperty(dsArtSearch, propertiesName, propertiesValues, null, null);
+                     rows = obj1.getDataObject("response").getInt("totalRows");
+                     if (rows > 0) {
+                     continue;
+                     }*/
                     //Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con la siguiente enfermedad 
                     DataObject obj1 = getDataProperty(dsArtSearch, "article", idArticle, 0);
                     rows = obj1.getDataObject("response").getInt("totalRows");
@@ -491,7 +502,7 @@ public class Utils {
          * respuesta
          */
         private static DataObject setPropArticle(SWBDataSource ds, JSONObject art,
-                int pmid, int pmc) throws IOException {
+                int pmid, int pmc) throws IOException, InterruptedException {
             DataObject newArticle = new DataObject();
             DataObject dataNewArticle = new DataObject();
             if (pmid != 0) {
@@ -501,13 +512,13 @@ public class Utils {
                 newArticle.put("pmcid", pmc);
             }
             if (art.has("articleTitle")) {
-                newArticle.put("title", TEXT.replaceSpecialCharacters((art.getString("articleTitle"))));
+                newArticle.put("title", TEXT.parseHTML((art.getString("articleTitle"))));
             }
             if (art.has("url")) {
                 newArticle.put("link", art.getString("url"));
             }
             if (art.has("reference")) {
-                newArticle.put("reference", TEXT.replaceSpecialCharacters((art.getString("reference"))));
+                newArticle.put("reference", TEXT.parseHTML((art.getString("reference"))));
             }
             if (art.has("author")) {
                 newArticle.put("autor", art.getString("author"));
@@ -530,7 +541,7 @@ public class Utils {
                 sbf.append(abstTxt.getString("text"));
             }
             if (sbf.length() > 0) {
-                newArticle.put("abstract", TEXT.replaceSpecialCharacters(sbf.toString()));
+                newArticle.put("abstract", TEXT.parseHTML(sbf.toString()));
             }
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());
@@ -792,5 +803,79 @@ public class Utils {
             aux = aux.replaceAll("__", " ");
             return aux;
         }
+
+        /**
+         * Extracts all the text in a HTML document.
+         * <p>
+         * Extrae todo el texto de un documento HTML.</p>
+         *
+         * @param txt a string representing the content of a HTML document
+         * @return a string representing all the text in the HTML document. un
+         * objeto string que representa todo el texto contenido en el documento
+         * HTML.
+         * @throws java.io.IOException if an I/O error occurs.
+         * <p>
+         * si ocurre cualquier error de E/S.</p>
+         * @throws java.lang.InterruptedException if this execution thread is
+         * interrupted by another thread.
+         * <p>
+         * si este hilo de ejecuci&oacute;n es interrumpido por otro hilo.</p>
+         * @throws IOException Signals that an I/O exception has occurred.
+         * @throws InterruptedException the interrupted exception
+         */
+        public static String parseHTML(String txt) throws IOException,
+                InterruptedException {
+
+            String ret = null;
+            //String summ=null;
+            if (txt != null) {
+                HTMLParser parser = new HTMLParser(new StringReader(txt));
+                ret = parser.getText();
+            }
+            //System.out.println("txt:"+ret);
+            return ret;
+        }
+
+    }
+
+    /**
+     * Supplies several I/O functions commonly used, involving streams, files,
+     * strings and entire file system structures.
+     * <p>
+     * Provee varias funciones de E/S utilizadas com&uacute;nmente, involucrando
+     * flujos, arhcivos, cadenas y estructuras completas del sistema de
+     * archivos.</p>
+     */
+    public static class IO {
+
+        /**
+         * Reads a reader and creates a string with that content.
+         * <p>
+         * Lee un objeto Reader y crea un objeto string con el contenido
+         * le&iacute;do.</p>
+         *
+         * @param in an input stream to read its content
+         * @return a string whose content is the same as for the input stream
+         * read. un objeto string cuyo contenido es el mismo que el del objeto
+         * inputStream le&iacute;do.
+         * @throws IOException if the input stream received is {@code null}.
+         * <p>
+         * Si el objeto inputStream recibido tiene un valor {@code null}.</p>
+         */
+        public static String readReader(Reader in) throws IOException {
+            if (in == null) {
+                throw new IOException("Input Stream null");
+            }
+            StringBuffer buf = new StringBuffer();
+            char[] bfile = new char[Utils.bufferSize];
+            int x;
+            while ((x = in.read(bfile, 0, Utils.bufferSize)) > -1) {
+                String aux = new String(bfile, 0, x);
+                buf.append(aux);
+            }
+            in.close();
+            return buf.toString();
+        }
+
     }
 }
