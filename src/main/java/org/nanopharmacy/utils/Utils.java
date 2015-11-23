@@ -307,7 +307,7 @@ public class Utils {
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
          */
-        public static int saveNewArticles(JSONObject publications, String idSearch) throws IOException, InterruptedException {
+        public static String saveNewArticles(JSONObject publications, String idSearch) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
             SWBDataSource dsSearch = engine.getDataSource("Search");
@@ -367,7 +367,7 @@ public class Utils {
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
             dsSearch.updateObj(datObjSearch);
-            return countNewArt;
+            return countNewArt + "," + countRecommended;
         }
 
         /**
