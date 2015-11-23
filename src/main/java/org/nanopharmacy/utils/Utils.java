@@ -315,7 +315,7 @@ public class Utils {
             DataObject datObjSearch = dsSearch.fetchObjById(idSearch);
 
             JSONArray arrOutstanding = publications.getJSONArray("outstanding");
-            int countNewArt = 0;
+            int countNewArt = 0, countRecommended = 0;;
             for (int i = 0; i < arrOutstanding.length(); i++) {
                 JSONObject art = arrOutstanding.getJSONObject(i);
 
@@ -358,10 +358,14 @@ public class Utils {
                 newArtSearch.put("ranking", ranking);
                 newArtSearch.put("status", 1);
                 dsArtSearch.addObj(newArtSearch);
+                if (ranking > 5) {
+                    countRecommended++;
+                }
                 countNewArt++;
             }
             //asigna el número de artículos nuevos
             datObjSearch.put("notification", countNewArt);
+            datObjSearch.put("recommended", countRecommended);
             dsSearch.updateObj(datObjSearch);
             return countNewArt;
         }
@@ -459,7 +463,8 @@ public class Utils {
 
                         if (datStatus == 1) {
                             countNewArt++;
-                        } else if (datRanking > 5) {
+                        }
+                        if (datRanking > 5) {
                             countRecommended++;
                         }
                     }
@@ -476,6 +481,9 @@ public class Utils {
                 newArtSearch.put("status", status);
                 dsArtSearch.addObj(newArtSearch);
 
+                if (ranking > 5) {
+                    countRecommended++;
+                }
             }
             //asigna el número de artículos nuevos y recomendados
             datObjSearch.put("notification", countNewArt);
