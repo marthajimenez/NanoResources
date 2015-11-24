@@ -520,13 +520,13 @@ public class Utils {
                 newArticle.put("pmcid", pmc);
             }
             if (art.has("articleTitle")) {
-                newArticle.put("title", TEXT.parseHTML((art.getString("articleTitle"))));
+                newArticle.put("title", TEXT.parseTextJson(TEXT.parseHTML((art.getString("articleTitle")))));
             }
             if (art.has("url")) {
                 newArticle.put("link", art.getString("url"));
             }
             if (art.has("reference")) {
-                newArticle.put("reference", TEXT.parseHTML((art.getString("reference"))));
+                newArticle.put("reference", TEXT.parseTextJson(TEXT.parseHTML((art.getString("reference")))));
             }
             if (art.has("author")) {
                 newArticle.put("autor", art.getString("author"));
@@ -545,11 +545,13 @@ public class Utils {
             JSONArray abstractTxt = art.getJSONArray("abstract");
             for (int j = 0; j < abstractTxt.length(); j++) {
                 JSONObject abstTxt = abstractTxt.getJSONObject(j);
-                sbf.append(abstTxt.getString("label"));
+                if(!abstTxt.getString("label").equals("Unlabeled")) {
+                    sbf.append(abstTxt.getString("label"));
+                }
                 sbf.append(abstTxt.getString("text"));
             }
             if (sbf.length() > 0) {
-                newArticle.put("abstract", TEXT.parseHTML(sbf.toString()));
+                newArticle.put("abstract", TEXT.parseTextJson(TEXT.parseHTML(sbf.toString())));
             }
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());
@@ -844,6 +846,20 @@ public class Utils {
             return ret;
         }
 
+        private static String parseTextJson(String txt) {
+            txt = txt.replaceAll("\"", "&quot;");
+            txt = txt.replaceAll('\u0022' + "", "&quot;");
+            txt = txt.replaceAll('\u201c' + "", "&quot;");
+            txt = txt.replaceAll('\u201d' + "", "&quot;");
+            //txt = txt.replaceAll('\u201e' +"", "\\\"");
+            txt = txt.replaceAll('\u201f' + "", "&quot;");
+            txt = txt.replaceAll('\u275d' + "", "&quot;");
+            txt = txt.replaceAll('\u275e' + "", "&quot;");
+            txt = txt.replaceAll('\u301d' + "", "&quot;");
+            txt = txt.replaceAll('\u301e' + "", "&quot;");
+            txt = txt.replaceAll('\uff02' + "", "&quot;");
+            return txt;
+        }
     }
 
     /**
