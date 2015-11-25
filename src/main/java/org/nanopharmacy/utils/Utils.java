@@ -531,27 +531,32 @@ public class Utils {
             if (art.has("author")) {
                 newArticle.put("autor", art.getString("author"));
             }
-            if (art.has("prognosis")) {
-                newArticle.put("prognosis", art.getInt("prognosis"));
-            }
-            if (art.has("prediction")) {
-                newArticle.put("prediction", art.getInt("prediction"));
-            }
-            if (art.has("treatment")) {
-                newArticle.put("treatment", art.getInt("treatment"));
-            }
 
             StringBuilder sbf = new StringBuilder();
             JSONArray abstractTxt = art.getJSONArray("abstract");
             for (int j = 0; j < abstractTxt.length(); j++) {
                 JSONObject abstTxt = abstractTxt.getJSONObject(j);
-                if(!abstTxt.getString("label").equals("Unlabeled")) {
-                    sbf.append(abstTxt.getString("label"));
+                if (!abstTxt.getString("label").equals("Unlabeled")) {
+                    sbf.append("<strong>");
+                    sbf.append(TEXT.parseTextJson(TEXT.parseHTML(abstTxt.getString("label"))));
+                    sbf.append("</strong><br>");
                 }
-                sbf.append(abstTxt.getString("text"));
+                sbf.append(TEXT.parseTextJson(TEXT.parseHTML(abstTxt.getString("text"))));
+                if((j + 1) != abstractTxt.length()) {
+                    sbf.append("<br>");
+                }
+                if (abstTxt.has("prognosis")) {
+                    newArticle.put("prognosis", abstTxt.getInt("prognosis"));
+                }
+                if (abstTxt.has("prediction")) {
+                    newArticle.put("prediction", abstTxt.getInt("prediction"));
+                }
+                if (abstTxt.has("treatment")) {
+                    newArticle.put("treatment", abstTxt.getInt("treatment"));
+                }
             }
             if (sbf.length() > 0) {
-                newArticle.put("abstract", TEXT.parseTextJson(TEXT.parseHTML(sbf.toString())));
+                newArticle.put("abstract", sbf.toString());//TEXT.parseTextJson(TEXT.parseHTML(sbf.toString()))
             }
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());
