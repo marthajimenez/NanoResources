@@ -315,7 +315,7 @@ public class Utils {
             DataObject datObjSearch = dsSearch.fetchObjById(idSearch);
 
             JSONArray arrOutstanding = publications.getJSONArray("outstanding");
-            int countNewArt = 0, countRecommended = 0;;
+            int countNewArt = 0, countRecommended = 0;
             for (int i = 0; i < arrOutstanding.length(); i++) {
                 JSONObject art = arrOutstanding.getJSONObject(i);
 
@@ -577,7 +577,7 @@ public class Utils {
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
          */
-        public static void setNewDisease(JSONArray arrayDiseases, String idGene) throws IOException {
+        public static void setNewDisease(JSONArray arrayDiseases, String idGene) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("CancerType");
             SWBDataSource dsGeneCancer = engine.getDataSource("Gene_Cancer");
@@ -588,10 +588,10 @@ public class Utils {
                 String definition = "";
                 String conceptId = "";
                 if (obj.has("title")) {
-                    title = obj.getString("title");
+                    title = TEXT.parseTextJson(TEXT.parseHTML(obj.getString("title")));
                 }
                 if (obj.has("definition")) {
-                    definition = obj.getString("definition");
+                    definition = TEXT.parseTextJson(TEXT.parseHTML(obj.getString("definition")));
                 }
                 if (obj.has("conceptId")) {
                     conceptId = obj.getString("conceptId");
@@ -638,7 +638,7 @@ public class Utils {
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
          */
-        public static void setUpdateDisease(JSONArray arrayDiseases, String idGene) throws IOException {
+        public static void setUpdateDisease(JSONArray arrayDiseases, String idGene) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("CancerType");
             SWBDataSource dsGeneCancer = engine.getDataSource("Gene_Cancer");
@@ -649,10 +649,10 @@ public class Utils {
                 String definition = "";
                 String conceptId = "";
                 if (obj.has("title")) {
-                    title = obj.getString("title");
+                    title = TEXT.parseTextJson(TEXT.parseHTML(obj.getString("title")));
                 }
                 if (obj.has("definition")) {
-                    definition = obj.getString("definition");
+                    definition = TEXT.parseTextJson(TEXT.parseHTML(obj.getString("definition")));
                 }
                 if (obj.has("conceptId")) {
                     conceptId = obj.getString("conceptId");
@@ -724,102 +724,6 @@ public class Utils {
     public static class TEXT {
 
         /**
-         * Reemplaza caracteres acentuados y espacios en blanco en {@code txt}.
-         * Realiza los cambios respetando caracteres en may&uacute;sculas o
-         * min&uacute;sculas los caracteres en blanco son reemplazados por
-         * guiones bajos, cualquier s&iacute;mbolo diferente a gui&oacute;n bajo
-         * es eliminado. <br>
-         *
-         * @param txt cadena con los caracteres que ser&aacute;n reemplazados
-         * @return una cadena sin caracteres especiales
-         *
-         */
-        public static String replaceSpecialCharacters(String txt) {
-            StringBuffer ret = new StringBuffer();
-            String aux = txt;
-            //aux = aux.toLowerCase();
-            aux = aux.replace('Á', 'A');
-            aux = aux.replace('Ä', 'A');
-            aux = aux.replace('Å', 'A');
-            aux = aux.replace('Â', 'A');
-            aux = aux.replace('À', 'A');
-            aux = aux.replace('Ã', 'A');
-
-            aux = aux.replace('É', 'E');
-            aux = aux.replace('Ê', 'E');
-            aux = aux.replace('È', 'E');
-            aux = aux.replace('Ë', 'E');
-
-            aux = aux.replace('Í', 'I');
-            aux = aux.replace('Î', 'I');
-            aux = aux.replace('Ï', 'I');
-            aux = aux.replace('Ì', 'I');
-
-            aux = aux.replace('Ó', 'O');
-            aux = aux.replace('Ö', 'O');
-            aux = aux.replace('Ô', 'O');
-            aux = aux.replace('Ò', 'O');
-            aux = aux.replace('Õ', 'O');
-
-            aux = aux.replace('Ú', 'U');
-            aux = aux.replace('Ü', 'U');
-            aux = aux.replace('Û', 'U');
-            aux = aux.replace('Ù', 'U');
-
-            aux = aux.replace('Ñ', 'N');
-
-            aux = aux.replace('Ç', 'C');
-            aux = aux.replace('Ý', 'Y');
-
-            aux = aux.replace('á', 'a');
-            aux = aux.replace('à', 'a');
-            aux = aux.replace('ã', 'a');
-            aux = aux.replace('â', 'a');
-            aux = aux.replace('ä', 'a');
-            aux = aux.replace('å', 'a');
-
-            aux = aux.replace('é', 'e');
-            aux = aux.replace('è', 'e');
-            aux = aux.replace('ê', 'e');
-            aux = aux.replace('ë', 'e');
-
-            aux = aux.replace('í', 'i');
-            aux = aux.replace('ì', 'i');
-            aux = aux.replace('î', 'i');
-            aux = aux.replace('ï', 'i');
-
-            aux = aux.replace('ó', 'o');
-            aux = aux.replace('ò', 'o');
-            aux = aux.replace('ô', 'o');
-            aux = aux.replace('ö', 'o');
-            aux = aux.replace('õ', 'o');
-
-            aux = aux.replace('ú', 'u');
-            aux = aux.replace('ù', 'u');
-            aux = aux.replace('ü', 'u');
-            aux = aux.replace('û', 'u');
-
-            aux = aux.replace('ñ', 'n');
-
-            aux = aux.replace('ç', 'c');
-            aux = aux.replace('ÿ', 'y');
-            aux = aux.replace('ý', 'y');
-
-            aux = aux.replaceAll(" ", "__");
-            int l = aux.length();
-            for (int x = 0; x < l; x++) {
-                char ch = aux.charAt(x);
-                if ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z')
-                        || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == '-') {
-                    ret.append(ch);
-                }
-            }
-            aux = ret.toString();
-            aux = aux.replaceAll("__", " ");
-            return aux;
-        }
-
-        /**
          * Extracts all the text in a HTML document.
          * <p>
          * Extrae todo el texto de un documento HTML.</p>
@@ -851,6 +755,13 @@ public class Utils {
             return ret;
         }
 
+        /**
+         * Parsea un texto, cambiando las comillas dobles por el c&oacute;digo 
+         * equivalente en HTML.
+         * @param txt Cadena inicial que contiene comillas dobles
+         * @return Cadena modificada con los codigos HTML correspondientes a las
+         * dobles comillas.
+         */
         private static String parseTextJson(String txt) {
             txt = txt.replaceAll("\"", "&quot;");
             txt = txt.replaceAll('\u0022' + "", "&quot;");
