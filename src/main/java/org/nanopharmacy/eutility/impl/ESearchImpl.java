@@ -948,7 +948,7 @@ public class ESearchImpl {
                                 abs = new Element("abstract");
 
                                 elem = new Element("label");
-                                elem.setText(e.getAttributeValue("Label") == null ? "Unlabeled" : abs.getAttributeValue("Label"));
+                                elem.setText(e.getAttributeValue("Label") == null ? "Unlabeled" : e.getAttributeValue("Label"));
                                 abs.addContent(elem);
 
                                 elem = new Element("text");
@@ -1010,6 +1010,7 @@ public class ESearchImpl {
                             elem = pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Journal").getChild("JournalIssue");
                             r.append("(").append(elem.getChild("PubDate").getChildText("Year")).append("). ");
                             r.append(articleTite);
+                            r.append(elem.getParentElement().getChildText("Title"));
                             r.append(". ISSN:").append(elem.getParentElement().getChildText("ISSN"));
                             r.append(", vol.").append(elem.getChildText("Volume"));
                             r.append(", issue ").append(elem.getChildText("Issue")).append(". ");
