@@ -75,6 +75,8 @@ public class ESearchImpl {
     public static final String Token_QryKEY = "@qrykey_"; // valor del parametro query_key generado por una busqueda previa
     public static final String Token_WebENV = "@webenv_"; // valor del parametro WebEnv generado por una busqueda previa
     
+    public static final String ERROR_GENE_INFO_NOT_FOUND = "NO_GENE_INFO_FOUND";     // Base de datos hospedada por NCBI
+    
     /** año de inicio de periodo de busqueda */
     public static final String Token_LY = "@ly_";
     
@@ -192,10 +194,21 @@ public class ESearchImpl {
         
         JSONObject gene = null;
         Element docSum;
-        docSum = getGeneDom(geneName);
+        boolean errorHappened = false;
+        try {
+            docSum = getGeneDom(geneName);
+        } catch (NoDataException nde) {
+            if (nde.getMessage().equals(ESearchImpl.ERROR_GENE_INFO_NOT_FOUND)) {
+                docSum = null;
+                errorHappened = true;
+            } else {
+                throw nde;
+            }
+        }
+        
         if (docSum != null) {
-            JSONObject geneData = new JSONObject();
             try {
+                JSONObject geneData = new JSONObject();
                 geneData.put("summary", docSum.getChildText("Summary"));
                 geneData.put("nomSymbol", docSum.getChildText("NomenclatureSymbol"));
                 geneData.put("nomName", docSum.getChildText("NomenclatureName"));
@@ -217,6 +230,13 @@ public class ESearchImpl {
             }/*finally {
                 
              }*/
+        } else {
+            if (errorHappened) {
+                JSONObject errorData = new JSONObject();
+                errorData.put("error", ESearchImpl.ERROR_GENE_INFO_NOT_FOUND);
+                errorData.put("geneName", geneName);
+                gene.put("error", errorData);
+            }
         }
         return gene;
     }
@@ -306,9 +326,9 @@ public class ESearchImpl {
                 try {
                     lXPath = XPath.newInstance("//" + Elem_DocSummary + "[" + Elem_NAME + "=\"" + geneName + "\" and " + Elem_ORGANISM + "/" + Elem_SciNAME + "=\"" + Val_HomoSapiens + "\"]");
                     res = (Element) lXPath.selectSingleNode(doc);
-//                    if( res==null ) {
-//                        throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre "+geneName+" y organismo Homo sapiens");
-//                    }
+                    if( res==null ) {
+                        throw new NoDataException("NO_GENE_INFO_FOUND");
+                    }
                 } catch (JDOMException jde) {
                     throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
                 }
@@ -676,6 +696,7 @@ public class ESearchImpl {
         for (Element pubmedArt : pubmedArtList) {
             pmid = pubmedArt.getChildText("pmid");
             if (accepted.contains(pmid)) {
+                System.out.println("pmid repetido: " + pmid);
                 continue;
             }
             accepted.add(pmid);
@@ -729,8 +750,9 @@ public class ESearchImpl {
             }
         } // for
         //}
-        System.out.println("total de recuperados=" + pubmedArtList.size());
-        System.out.println("total de aceptados=" + accepted.size());
+        System.out.println("total de recuperados = " + pubmedArtList.size());
+        System.out.println("total de aceptados (xml) = " + accepted.size());
+        System.out.println("total de aceptados (json) = " + outstanding.length());
 
         try {
             publications.put("outstanding", outstanding);
@@ -913,6 +935,7 @@ public class ESearchImpl {
                         //List<String> ids = getValues(nodes);
                         List<Element> pubmedArtList = elem.getChildren("PubmedArticle");
                         for (Element pubmedArt : pubmedArtList) {
+                            String articleTite = null;
                             if (pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Abstract") == null) {
                                 continue;
                             }
@@ -955,7 +978,8 @@ public class ESearchImpl {
                             }
 
                             elem = new Element("title");
-                            elem.setText(pubmedArt.getChild("MedlineCitation").getChild("Article").getChildText("ArticleTitle"));
+                            articleTite = pubmedArt.getChild("MedlineCitation").getChild("Article").getChildText("ArticleTitle");
+                            elem.setText(articleTite);
                             art.addContent(elem);
                             pmid = pubmedArt.getChild("MedlineCitation").getChildText("PMID");
                             elem = new Element("pmid");
@@ -982,16 +1006,20 @@ public class ESearchImpl {
                                     r.append(e.getChildText("LastName")).append(", ").append(e.getChildText("Initials")).append("; ");
                                 }
                             }
-
+                            //Referencia al articulo
                             elem = pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Journal").getChild("JournalIssue");
                             r.append("(").append(elem.getChild("PubDate").getChildText("Year")).append("). ");
-                            r.append(elem.getParentElement().getChildText("Title"));
+                            r.append(articleTite);
                             r.append(". ISSN:").append(elem.getParentElement().getChildText("ISSN"));
                             r.append(", vol.").append(elem.getChildText("Volume"));
                             r.append(", issue ").append(elem.getChildText("Issue")).append(". ");
+                            r.append(elem.getChild("PubDate").getChildText("Month") == null
+                                    ? ""
+                                    : " " + elem.getChild("PubDate").getChildText("Month"));
                             r.append(elem.getChild("PubDate").getChildText("Day") == null
                                     ? ""
                                     : " " + elem.getChild("PubDate").getChildText("Day"));
+                            r.append(".");
                             elem = new Element("reference");
                             elem.setText(r.toString());
                             art.addContent(elem);
@@ -1130,7 +1158,7 @@ public class ESearchImpl {
                 }
                 if (doc != null) {
                     Element art, abs;
-                    String pmc, author, month, year, value;
+                    String pmc, author, day, month, year, value;
                     StringBuilder r;
                     Document d;
                     int rank;
@@ -1199,24 +1227,37 @@ public class ESearchImpl {
                                     lXPath = XPath.newInstance("//pub-date[starts-with(@pub-type, 'pmc')]");
                                     elem = (Element) lXPath.selectSingleNode(d);
                                     if (elem == null) {
+                                        day = null;
                                         month = null;
                                         year = null;
                                     } else {
+                                        day = elem.getChildText("day");
                                         month = elem.getChildText("month");
                                         year = elem.getChildText("year");
                                     }
                                 } else {
+                                    day = elem.getChildText("day");
                                     month = elem.getChildText("month");
                                     year = elem.getChildText("year");
                                 }
                             } else {
+                                day = elem.getChildText("day");
                                 month = elem.getChildText("month");
                                 year = elem.getChildText("year");
                             }
                             if (year != null) {
-                                r.append("(").append(year).append(")");
+                                r.append("(").append(year).append("). ");
                             }
-
+                            
+                            //título y revista de la referencia
+                            r.append(pubmedArt.getChild("front").getChild("article-meta").getChild("title-group").getChild("article-title").getValue());
+                            lXPath = XPath.newInstance("//journal-meta/journal-title-group/journal-title");
+                            elem = (Element) lXPath.selectSingleNode(d);
+                            if (elem != null) {
+                                r.append(". ");
+                                r.append(elem.getValue());
+                            }
+                            
                             lXPath = XPath.newInstance("//journal-meta/issn[@pub-type='epub']");
                             elem = (Element) lXPath.selectSingleNode(d);
                             if (elem == null) {
@@ -1246,6 +1287,11 @@ public class ESearchImpl {
                             if (month != null) {
                                 try {
                                     r.append(Utils.Months[Integer.parseInt(month)]);
+                                    if (day != null) {
+                                        r.append(" ");
+                                        r.append(day);
+                                        r.append(".");
+                                    }
                                 } catch (Exception e) {
                                 }
                             }

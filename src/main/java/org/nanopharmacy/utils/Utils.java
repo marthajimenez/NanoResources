@@ -60,24 +60,23 @@ public class Utils {
     public static int getRanking(String text, String geneName, String molecularAlt) {
         int rank = 0;
         if (text == null || geneName == null || molecularAlt == null) {
-            return 0;
+            return rank;
         }
 
         final String content = text.toLowerCase();
-        if (content.contains(geneName)) {
-            rank = 2;
-        }
-        if (content.contains("prognosis") || content.contains("treatment") || content.contains("predict")) {
-            rank = 6;
-        }
-        if (content.contains("prognosis") && content.contains("treatment")
-                || content.contains("prognosis") && content.contains("predict")
-                || content.contains("treatment") && content.contains("predict")
-                || content.contains("prognosis") && content.contains("treatment") && content.contains("predict")) {
-            rank = 8;
-        }
+        boolean containsPrognosis = content.contains("prognosis");
+        boolean containsTreatment = content.contains("treatment");
+        boolean containsPredict = content.contains("predict");
+        
         if (content.contains(molecularAlt)) {
             rank = 10;
+        } else if (containsPrognosis && containsTreatment && containsPredict) {
+            rank = 8;
+        } else if ((containsPrognosis && containsTreatment) || (containsPrognosis && containsPredict) ||
+                (containsTreatment && containsPredict)) {
+            rank = 6;
+        } else if (containsPrognosis || containsTreatment || containsPredict) {
+            rank = 2;
         }
 
         return rank;
