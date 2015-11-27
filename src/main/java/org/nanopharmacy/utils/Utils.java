@@ -521,6 +521,7 @@ public class Utils {
             }
             if (art.has("articleTitle")) {
                 newArticle.put("title", TEXT.parseTextJson(TEXT.parseHTML((art.getString("articleTitle")))));
+                newArticle.put("titleSort", TEXT.parseTextJson(TEXT.parseHTML((art.getString("articleTitle")))).toLowerCase());
             }
             if (art.has("url")) {
                 newArticle.put("link", art.getString("url"));
@@ -530,6 +531,7 @@ public class Utils {
             }
             if (art.has("author")) {
                 newArticle.put("autor", art.getString("author"));
+                newArticle.put("autorSort", art.getString("author").toLowerCase());
             }
 
             StringBuilder sbf = new StringBuilder();
