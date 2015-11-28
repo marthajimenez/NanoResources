@@ -537,7 +537,7 @@ public class Utils {
             JSONArray abstractTxt = art.getJSONArray("abstract");
             for (int j = 0; j < abstractTxt.length(); j++) {
                 JSONObject abstTxt = abstractTxt.getJSONObject(j);
-                if (!abstTxt.getString("label").equals("Unlabeled")) {
+                if (!abstTxt.getString("label").equalsIgnoreCase("Unlabeled")) {
                     sbf.append("<strong>");
                     sbf.append(TEXT.parseTextJson(TEXT.parseHTML(abstTxt.getString("label"))));
                     sbf.append("</strong><br>");
