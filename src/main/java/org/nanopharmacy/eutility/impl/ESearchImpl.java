@@ -75,7 +75,9 @@ public class ESearchImpl {
     public static final String Token_QryKEY = "@qrykey_"; // valor del parametro query_key generado por una busqueda previa
     public static final String Token_WebENV = "@webenv_"; // valor del parametro WebEnv generado por una busqueda previa
     
-    public static final String ERROR_GENE_INFO_NOT_FOUND = "NO_GENE_INFO_FOUND";     // Base de datos hospedada por NCBI
+    public static final String ERROR_INFO_NOT_FOUND = "NO_INFO_FOUND";     // No info found at NCBI
+    
+    public static final String ERROR_IN_COMM = "COMMUNICATION_PROBLEM";    // Communication lost with NCBI
     
     /** año de inicio de periodo de busqueda */
     public static final String Token_LY = "@ly_";
@@ -198,7 +200,7 @@ public class ESearchImpl {
         try {
             docSum = getGeneDom(geneName);
         } catch (NoDataException nde) {
-            if (nde.getMessage().equals(ESearchImpl.ERROR_GENE_INFO_NOT_FOUND)) {
+            if (nde.getMessage().equals(ESearchImpl.ERROR_INFO_NOT_FOUND)) {
                 docSum = null;
                 errorHappened = true;
             } else {
@@ -232,8 +234,9 @@ public class ESearchImpl {
              }*/
         } else {
             if (errorHappened) {
+                gene = new JSONObject();
                 JSONObject errorData = new JSONObject();
-                errorData.put("error", ESearchImpl.ERROR_GENE_INFO_NOT_FOUND);
+                errorData.put("error", ESearchImpl.ERROR_INFO_NOT_FOUND);
                 errorData.put("geneName", geneName);
                 gene.put("error", errorData);
             }
@@ -674,12 +677,28 @@ public class ESearchImpl {
         JSONArray outstanding = new JSONArray();   // publicaciones aceptadas en el resultado final
         JSONArray rejected = new JSONArray();      // publicaciones rechazadas debido a su ranking menor a 2
 
-        List<Element> pubmedArtList;
+        List<Element> pubmedArtList = new ArrayList<>(64);
         List<String> accepted;
         List<Element> abstractLst;
         Document doc;
-        doc = getPublicationsDom(geneName, molecularAlt, ellapsedYears, ellapsedDays);
-
+        try {
+            doc = getPublicationsDom(geneName, molecularAlt, ellapsedYears, ellapsedDays);
+        } catch (NoDataException nde) {
+            JSONObject errorData = new JSONObject();
+            errorData.put("error", ESearchImpl.ERROR_INFO_NOT_FOUND);
+            errorData.put("msg", "No data for your search");
+            publications.put("error", errorData);
+            System.out.println("Sin informacion de NCBI");
+            doc = null;
+        } catch (IOException ioe) {
+            JSONObject errorData = new JSONObject();
+            errorData.put("error", ESearchImpl.ERROR_IN_COMM);
+            errorData.put("msg", "Communications problem");
+            publications.put("error", errorData);
+            System.out.println("Por problemas de comunicacion");
+            doc = null;
+        }
+        
         XPath lXPath;
         JSONObject article, abstrct;
         JSONArray abstracts;
@@ -688,18 +707,21 @@ public class ESearchImpl {
 
         try {
             lXPath = XPath.newInstance("//article");
-            pubmedArtList = lXPath.selectNodes(doc);
+            if (doc != null) {
+                pubmedArtList = lXPath.selectNodes(doc);
+            }
         } catch (JDOMException jde) {
             return null;
         }
         accepted = new ArrayList<>(pubmedArtList.size());
         for (Element pubmedArt : pubmedArtList) {
             pmid = pubmedArt.getChildText("pmid");
-            if (accepted.contains(pmid)) {
+            if (pmid != null && accepted.contains(pmid)) {
                 System.out.println("pmid repetido: " + pmid);
                 continue;
+            } else if (pmid != null && !pmid.isEmpty()) {
+                accepted.add(pmid);
             }
-            accepted.add(pmid);
             rankMax = 0;
             abstractLst = pubmedArt.getChildren("abstract");
             try {
@@ -724,7 +746,9 @@ public class ESearchImpl {
                 }
                 if (rankMax > 0) {
                     article = new JSONObject();
-                    article.put("pmid", pmid);
+                    if (pmid != null) {
+                        article.put("pmid", pmid);
+                    }
                     if (pubmedArt.getChild("pmc") != null) {
                         article.put("pmc", pubmedArt.getChildText("pmc"));
                     }
@@ -736,14 +760,14 @@ public class ESearchImpl {
                     article.put("reference", pubmedArt.getChildText("reference"));
 
                     outstanding.put(article);
-                } else {
-                    article = new JSONObject();
-                    if (pubmedArt.getChild("pmc") != null) {
-                        article.put("pmc", pubmedArt.getChildText("pmc"));
-                    } else {
-                        article.put("pmid", pmid);
-                    }
-                    rejected.put(article);
+//                } else {
+//                    article = new JSONObject();
+//                    if (pubmedArt.getChild("pmc") != null) {
+//                        article.put("pmc", pubmedArt.getChildText("pmc"));
+//                    } else {
+//                        article.put("pmid", pmid);
+//                    }
+//                    rejected.put(article);
                 }
             } catch (JSONException | NumberFormatException jse) {
                 Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
@@ -755,8 +779,10 @@ public class ESearchImpl {
         System.out.println("total de aceptados (json) = " + outstanding.length());
 
         try {
-            publications.put("outstanding", outstanding);
-            publications.put("rejected", rejected);
+            if (!publications.has("error")) {
+                publications.put("outstanding", outstanding);
+                publications.put("rejected", rejected);
+            }
         } catch (Exception jse) {
             Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
         }
