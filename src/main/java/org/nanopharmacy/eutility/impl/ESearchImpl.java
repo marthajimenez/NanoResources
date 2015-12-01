@@ -732,6 +732,7 @@ public class ESearchImpl {
             errorData.put("msg", "General problem");
             publications.put("error", errorData);
             doc = null;
+            Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, e);
         }
         
         XPath lXPath;
@@ -751,7 +752,7 @@ public class ESearchImpl {
         accepted = new ArrayList<>(pubmedArtList.size());
         for (Element pubmedArt : pubmedArtList) {
             pmid = pubmedArt.getChildText("pmid");
-            if (pmid != null && accepted.contains(pmid)) {
+            if (pmid != null && !pmid.isEmpty() && accepted.contains(pmid)) {
                 System.out.println("pmid repetido: " + pmid);
                 continue;
             } else if (pmid != null && !pmid.isEmpty()) {
@@ -809,6 +810,7 @@ public class ESearchImpl {
             }
         } // for
         //}
+        doc = null;
         System.out.println("total de recuperados = " + pubmedArtList.size());
         System.out.println("total de aceptados (xml) = " + accepted.size());
         System.out.println("total de aceptados (json) = " + outstanding.length());
@@ -816,7 +818,7 @@ public class ESearchImpl {
         try {
             if (!publications.has("error")) {
                 publications.put("outstanding", outstanding);
-                publications.put("rejected", rejected);
+                //publications.put("rejected", rejected);
             }
         } catch (Exception jse) {
             Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
@@ -972,11 +974,13 @@ public class ESearchImpl {
             }
             
             if (count > 0) {
+//                System.out.println("Articulos en busqueda PubMed: " + count);
                 spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PUBMED);
                 spec = spec.replaceFirst(Token_QryKEY, qryKey);
                 spec = spec.replaceFirst(Token_WebENV, webEnv);
                 spec = spec.replaceFirst(Token_RetStart, "0");
                 spec = spec.replaceFirst(Token_RetMax, Integer.toString(count));
+//                System.out.println("\nURL:\n" + spec);
                 cmd = new URL(spec);
                 conex = (HttpURLConnection) cmd.openConnection();
                 conex.setConnectTimeout(30000);
@@ -1011,10 +1015,12 @@ public class ESearchImpl {
                         }
 
                         //List<String> ids = getValues(nodes);
+                        int sinAbstract = 0;
                         List<Element> pubmedArtList = elem.getChildren("PubmedArticle");
                         for (Element pubmedArt : pubmedArtList) {
                             String articleTite = null;
                             if (pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Abstract") == null) {
+                                sinAbstract++;
                                 continue;
                             }
                             //Document d = new Document((Element) (pubmedArt.clone()));
@@ -1105,6 +1111,7 @@ public class ESearchImpl {
 
                             root.addContent(art);
                         }
+//                        System.out.println("*** Sin abstract: " + sinAbstract);
     //XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
     //String xmlString = outputter.outputString(root);
     //System.out.println("\nres="+xmlString);
@@ -1158,7 +1165,7 @@ public class ESearchImpl {
         spec = spec.replaceFirst(TOKEN_ALTMOL, getQueryValue(molecularAlt));
         spec = spec.replaceFirst(Token_DbNAME, dbName);
         spec = spec.replaceFirst(Token_GENE, geneName);
-        //System.out.println("\nURL:\n" + spec);
+        System.out.println("\nURL:\n" + spec);
         cmd = new URL(spec);
         conex = (HttpURLConnection) cmd.openConnection();
         conex.setConnectTimeout(30000);
@@ -1223,12 +1230,13 @@ public class ESearchImpl {
             }
 
             if (count > 0) {
+//                System.out.println("\nArticulos en busqueda PMC: " + count);
                 spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PMC);
                 spec = spec.replaceFirst(Token_QryKEY, qryKey);
                 spec = spec.replaceFirst(Token_WebENV, webEnv);
                 spec = spec.replaceFirst(Token_RetStart, "0");
                 spec = spec.replaceFirst(Token_RetMax, Integer.toString(count));
-
+                System.out.println("\nURL:\n" + spec);
                 cmd = new URL(spec);
                 conex = (HttpURLConnection) cmd.openConnection();
                 conex.setConnectTimeout(30000);
@@ -1262,7 +1270,9 @@ public class ESearchImpl {
                         }
 
                         List<Element> pubmedArtList = elem.getChildren("article");
+                        int articulosEnXML = 0;
                         for (Element pubmedArt : pubmedArtList) {
+                            articulosEnXML++;
                             pubmedArt.removeChild("body");
                             pubmedArt.removeChild("back");
                             elem = pubmedArt.getChild("front").getChild("article-meta");
@@ -1475,6 +1485,7 @@ public class ESearchImpl {
                             //ids.remove(pmid);
                             //}
                         } // for pubmedArt
+//                        System.out.println("Articulos en XML PMC: " + articulosEnXML);
     //XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
     //String xmlString = outputter.outputString(root);
     //System.out.println("\n\nres="+xmlString);
