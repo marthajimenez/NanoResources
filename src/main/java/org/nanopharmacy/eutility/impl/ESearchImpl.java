@@ -1003,7 +1003,7 @@ public class ESearchImpl {
                 if (doc != null) {
                     //Element art;
                     List<Element> abstractLst;
-                    String pmid, author, month, year, value;
+                    String pmid, author, value;
                     //StringBuilder r;
 //                    Matcher m;
 
@@ -1291,6 +1291,87 @@ public class ESearchImpl {
 
                             Document d = new Document((Element) (pubmedArt.clone()));
                             Element art = new Element("article");
+                            
+                            lXPath = XPath.newInstance("//abstract/sec");
+                            nodes = lXPath.selectNodes(d);
+//                            nodes = lXPath.selectNodes(pubmedArt);
+                            if (nodes.isEmpty()) {
+                                if (pubmedArt.getChild("front").getChild("article-meta").getChild("abstract") == null) {
+                                    continue;
+                                } else {
+                                    Element abs = new Element("abstract");
+
+                                    elem = new Element("label");
+                                    elem.setText("Unlabeled");
+                                    abs.addContent(elem);
+
+                                    elem = new Element("text");
+                                    value = pubmedArt.getChild("front").getChild("article-meta").
+                                            getChild("abstract").getChildText("p");
+                                    elem.setText(value);
+                                    abs.addContent(elem);
+
+                                    elem = new Element("prognosis");
+                                    elem.setText(value.contains("prognosis") ? "1" : "0");
+                                    abs.addContent(elem);
+                                    elem = new Element("treatment");
+                                    elem.setText(value.contains("treatment") ? "1" : "0");
+                                    abs.addContent(elem);
+                                    elem = new Element("prediction");
+                                    elem.setText(value.contains("predict") ? "1" : "0");
+                                    abs.addContent(elem);
+
+                                    rank = Utils.getRanking(value, geneName, molecularAlt);
+                                    elem = new Element("rank");
+                                    elem.setText(Integer.toString(rank));
+                                    abs.addContent(elem);
+
+                                    art.addContent(abs);
+                                }
+                            } else {
+                                boolean atLeastOneAbstract = false;
+                                for (Element e : nodes) {
+                                    Element abs = new Element("abstract");
+
+                                    elem = new Element("label");
+                                    elem.setText(e.getChildText("title"));
+                                    abs.addContent(elem);
+
+                                    elem = new Element("text");
+                                    value = e.getChildText("p");
+                                    if (value != null) {
+                                        elem.setText(value);
+                                        abs.addContent(elem);
+
+                                        elem = new Element("prognosis");
+                                        elem.setText(value.contains("prognosis") ? "1" : "0");
+                                        abs.addContent(elem);
+                                        elem = new Element("treatment");
+                                        elem.setText(value.contains("treatment") ? "1" : "0");
+                                        abs.addContent(elem);
+                                        elem = new Element("prediction");
+                                        elem.setText(value.contains("predict") ? "1" : "0");
+                                        abs.addContent(elem);
+
+                                        rank = Utils.getRanking(value, geneName, molecularAlt);
+                                        elem = new Element("rank");
+                                        elem.setText(Integer.toString(rank));
+                                        abs.addContent(elem);
+
+                                        art.addContent(abs);
+                                        atLeastOneAbstract = true;
+                                    }
+                                }
+                                if (!atLeastOneAbstract) {//No tiene texto en abstract
+                                    continue;
+                                }
+                            }
+                            if (rank == 0) {
+                                rankCero++;
+                                continue;
+                            }
+                            
+                            
                             elem = new Element("title");
                             elem.setText(pubmedArt.getChild("front").getChild("article-meta").
                                     getChild("title-group").getChild("article-title").getValue());
@@ -1419,84 +1500,6 @@ public class ESearchImpl {
                             elem.setText(r.toString());
                             art.addContent(elem);
 
-                            lXPath = XPath.newInstance("//abstract/sec");
-                            nodes = lXPath.selectNodes(d);
-//                            nodes = lXPath.selectNodes(pubmedArt);
-                            if (nodes.isEmpty()) {
-                                if (pubmedArt.getChild("front").getChild("article-meta").getChild("abstract") == null) {
-                                    continue;
-                                } else {
-                                    Element abs = new Element("abstract");
-
-                                    elem = new Element("label");
-                                    elem.setText("Unlabeled");
-                                    abs.addContent(elem);
-
-                                    elem = new Element("text");
-                                    value = pubmedArt.getChild("front").getChild("article-meta").
-                                            getChild("abstract").getChildText("p");
-                                    elem.setText(value);
-                                    abs.addContent(elem);
-
-                                    elem = new Element("prognosis");
-                                    elem.setText(value.contains("prognosis") ? "1" : "0");
-                                    abs.addContent(elem);
-                                    elem = new Element("treatment");
-                                    elem.setText(value.contains("treatment") ? "1" : "0");
-                                    abs.addContent(elem);
-                                    elem = new Element("prediction");
-                                    elem.setText(value.contains("predict") ? "1" : "0");
-                                    abs.addContent(elem);
-
-                                    rank = Utils.getRanking(value, geneName, molecularAlt);
-                                    elem = new Element("rank");
-                                    elem.setText(Integer.toString(rank));
-                                    abs.addContent(elem);
-
-                                    art.addContent(abs);
-                                }
-                            } else {
-                                boolean atLeastOneAbstract = false;
-                                for (Element e : nodes) {
-                                    Element abs = new Element("abstract");
-
-                                    elem = new Element("label");
-                                    elem.setText(e.getChildText("title"));
-                                    abs.addContent(elem);
-
-                                    elem = new Element("text");
-                                    value = e.getChildText("p");
-                                    if (value != null) {
-                                        elem.setText(value);
-                                        abs.addContent(elem);
-
-                                        elem = new Element("prognosis");
-                                        elem.setText(value.contains("prognosis") ? "1" : "0");
-                                        abs.addContent(elem);
-                                        elem = new Element("treatment");
-                                        elem.setText(value.contains("treatment") ? "1" : "0");
-                                        abs.addContent(elem);
-                                        elem = new Element("prediction");
-                                        elem.setText(value.contains("predict") ? "1" : "0");
-                                        abs.addContent(elem);
-
-                                        rank = Utils.getRanking(value, geneName, molecularAlt);
-                                        elem = new Element("rank");
-                                        elem.setText(Integer.toString(rank));
-                                        abs.addContent(elem);
-
-                                        art.addContent(abs);
-                                        atLeastOneAbstract = true;
-                                    }
-                                }
-                                if (!atLeastOneAbstract) {//No tiene texto en abstract
-                                    continue;
-                                }
-                            }
-                            if (rank == 0) {
-                                rankCero++;
-                                continue;
-                            }
                             root.addContent(art);
                             //res.addContent((Element)pubmedArt.clone());
                             //ids.remove(pmid);
