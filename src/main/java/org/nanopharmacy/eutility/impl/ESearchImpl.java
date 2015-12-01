@@ -921,6 +921,8 @@ public class ESearchImpl {
             doc = null;
         } finally {
             conex.disconnect();
+            conex = null;
+            cmd = null;
         }
         if (doc != null) {
             int count = 0;
@@ -962,6 +964,7 @@ public class ESearchImpl {
                 webEnv = null;
             }
             doc = null;
+            elem = null;
             lXPath = null;
 ////////////////////////////////////////////////////////////////////////////////            
             if (qryKey == null || webEnv == null) {
@@ -989,14 +992,16 @@ public class ESearchImpl {
                     doc = null;
                 } finally {
                     conex.disconnect();
+                    conex = null;
+                    cmd = null;
                 }
                 if (doc != null) {
-                    Element art, abs;
+                    //Element art;
                     List<Element> abstractLst;
                     String pmid, author, month, year, value;
-                    StringBuilder r;
+                    //StringBuilder r;
                     int rank;
-                    Matcher m;
+//                    Matcher m;
 
                     try {
                         lXPath = XPath.newInstance("//PubmedArticleSet");
@@ -1013,12 +1018,12 @@ public class ESearchImpl {
                                 continue;
                             }
                             //Document d = new Document((Element) (pubmedArt.clone()));
-                            art = new Element("article");
+                            Element art = new Element("article");
 
                             abstractLst = pubmedArt.getChild("MedlineCitation").getChild("Article")
                                     .getChild("Abstract").getChildren("AbstractText");
                             for (Element e : abstractLst) {
-                                abs = new Element("abstract");
+                                Element abs = new Element("abstract");
 
                                 elem = new Element("label");
                                 elem.setText(e.getAttributeValue("Label") == null ? "Unlabeled" : e.getAttributeValue("Label"));
@@ -1029,7 +1034,7 @@ public class ESearchImpl {
                                 elem.setText(value);
                                 abs.addContent(elem);
 
-                                m = prognosisPtrn.matcher(value);
+                                Matcher m = prognosisPtrn.matcher(value);
                                 elem = new Element("prognosis");
                                 elem.setText(m.matches() ? "1" : "0");
                                 abs.addContent(elem);
@@ -1064,7 +1069,7 @@ public class ESearchImpl {
 
                             //System.out.println("1.." + pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList"));
                             //System.out.println("2..." + pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList").getChildren("Author"));
-                            r = new StringBuilder();
+                            StringBuilder r = new StringBuilder(256);
                             if (pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList") != null) {
                                 nodes = pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("AuthorList").getChildren("Author");
                                 elem = nodes.get(0);
@@ -1164,10 +1169,13 @@ public class ESearchImpl {
         try {
             InputStream in = conex.getInputStream();
             doc = getXML(in);
+            in.close();
         } catch (JDOMException jde) {
             doc = null;
         } finally {
             conex.disconnect();
+            conex = null;
+            cmd = null;
         }
         if (doc != null) {
             int count = 0;
@@ -1207,6 +1215,8 @@ public class ESearchImpl {
                 qryKey = null;
                 webEnv = null;
             }
+            lXPath = null;
+            elem = null;
 ////////////////////////////////////////////////////////////////////////////////            
             if (qryKey == null || webEnv == null) {
                 throw new UseHistoryException("entrez tal vez no reconocio la consulta, por lo que no devolvio queryKey ni WebEnv");
@@ -1229,16 +1239,19 @@ public class ESearchImpl {
                 try {
                     InputStream in = conex.getInputStream();
                     doc = getXML(in);
+                    in.close();
                 } catch (JDOMException jde) {
                     doc = null;
                 } finally {
                     conex.disconnect();
+                    conex = null;
+                    cmd = null;
                 }
                 if (doc != null) {
-                    Element art, abs;
+                    //Element art, abs;
                     String pmc, author, day, month, year, value;
-                    StringBuilder r;
-                    Document d;
+                    //StringBuilder r;
+                    //Document d;
                     int rank;
 
                     try {
@@ -1258,20 +1271,23 @@ public class ESearchImpl {
                             elem.removeChild("kwd-group");
                             elem.removeChild("custom-meta-group");
 
-                            d = new Document((Element) (pubmedArt.clone()));
+                            Document d = new Document((Element) (pubmedArt.clone()));
                             //String pmid = pubmedArt.getChild("MedlineCitation").getChildText("PMID");
                             //if(ids.contains(pmid)) {
-                            art = new Element("article");
+                            Element art = new Element("article");
                             elem = new Element("title");
-                            elem.setText(pubmedArt.getChild("front").getChild("article-meta").getChild("title-group").getChild("article-title").getValue());
+                            elem.setText(pubmedArt.getChild("front").getChild("article-meta").
+                                    getChild("title-group").getChild("article-title").getValue());
                             art.addContent(elem);
                             elem = new Element("pmid");
                             lXPath = XPath.newInstance("//article-id[@pub-id-type=\"pmid\"]");
                             elem.setText(((Element) lXPath.selectSingleNode(d)).getValue());
+//                            elem.setText(((Element) lXPath.selectSingleNode(pubmedArt)).getValue());
                             art.addContent(elem);
                             elem = new Element("pmc");
                             lXPath = XPath.newInstance("//article-id[@pub-id-type=\"pmc\"]");
                             pmc = ((Element) lXPath.selectSingleNode(d)).getValue();
+//                            pmc = ((Element) lXPath.selectSingleNode(pubmedArt)).getValue();
                             elem.setText(pmc);
                             art.addContent(elem);
                             elem = new Element("url");
@@ -1280,30 +1296,36 @@ public class ESearchImpl {
 
                             lXPath = XPath.newInstance("//contrib-group/contrib");
                             nodes = lXPath.selectNodes(d);
+//                            nodes = lXPath.selectNodes(pubmedArt);
                             elem = nodes.get(0);
                             if (elem.getChild("name") != null) {
-                                author = elem.getChild("name").getChildText("surname") + ", " + elem.getChild("name").getChildText("given-names");
+                                author = elem.getChild("name").getChildText("surname") +
+                                        ", " + elem.getChild("name").getChildText("given-names");
                                 elem = new Element("author");
                                 elem.setText(author);
                                 art.addContent(elem);
                             }
 
-                            r = new StringBuilder();
+                            StringBuilder r = new StringBuilder(256);
                             for (Element e : nodes) {
                                 if (e.getChild("name") == null) {
                                     continue;
                                 }
-                                r.append(e.getChild("name").getChildText("surname")).append(", ").append(e.getChild("name").getChildText("given-names")).append("; ");
+                                r.append(e.getChild("name").getChildText("surname")).append(", ").
+                                        append(e.getChild("name").getChildText("given-names")).append("; ");
                             }
 
                             lXPath = XPath.newInstance("//pub-date[@pub-type='epub']");
                             elem = (Element) lXPath.selectSingleNode(d);
+//                            elem = (Element) lXPath.selectSingleNode(pubmedArt);
                             if (elem == null) {
                                 lXPath = XPath.newInstance("//pub-date[@pub-type='ppub']");
                                 elem = (Element) lXPath.selectSingleNode(d);
+//                                elem = (Element) lXPath.selectSingleNode(pubmedArt);
                                 if (elem == null) {
                                     lXPath = XPath.newInstance("//pub-date[starts-with(@pub-type, 'pmc')]");
                                     elem = (Element) lXPath.selectSingleNode(d);
+//                                    elem = (Element) lXPath.selectSingleNode(pubmedArt);
                                     if (elem == null) {
                                         day = null;
                                         month = null;
@@ -1331,6 +1353,7 @@ public class ESearchImpl {
                             r.append(pubmedArt.getChild("front").getChild("article-meta").getChild("title-group").getChild("article-title").getValue());
                             lXPath = XPath.newInstance("//journal-meta/journal-title-group/journal-title");
                             elem = (Element) lXPath.selectSingleNode(d);
+//                            elem = (Element) lXPath.selectSingleNode(pubmedArt);
                             if (elem != null) {
                                 r.append(". ");
                                 r.append(elem.getValue());
@@ -1338,9 +1361,11 @@ public class ESearchImpl {
                             
                             lXPath = XPath.newInstance("//journal-meta/issn[@pub-type='epub']");
                             elem = (Element) lXPath.selectSingleNode(d);
+//                            elem = (Element) lXPath.selectSingleNode(pubmedArt);
                             if (elem == null) {
                                 lXPath = XPath.newInstance("//journal-meta/issn[@pub-type='ppub']");
                                 elem = (Element) lXPath.selectSingleNode(d);
+//                                elem = (Element) lXPath.selectSingleNode(pubmedArt);
                                 if (elem != null) {
                                     r.append(". ISSN:");
                                     r.append(elem.getValue());
@@ -1359,7 +1384,8 @@ public class ESearchImpl {
                             elem = pubmedArt.getChild("front").getChild("article-meta").getChild("issue");
                             if (elem != null) {
                                 r.append(", issue ");
-                                r.append(pubmedArt.getChild("front").getChild("article-meta").getChild("issue").getValue()).append(". ");
+                                r.append(pubmedArt.getChild("front").getChild("article-meta").
+                                        getChild("issue").getValue()).append(". ");
                             }
 
                             if (month != null) {
@@ -1379,18 +1405,20 @@ public class ESearchImpl {
 
                             lXPath = XPath.newInstance("//abstract/sec");
                             nodes = lXPath.selectNodes(d);
+//                            nodes = lXPath.selectNodes(pubmedArt);
                             if (nodes.isEmpty()) {
                                 if (pubmedArt.getChild("front").getChild("article-meta").getChild("abstract") == null) {
                                     continue;
                                 } else {
-                                    abs = new Element("abstract");
+                                    Element abs = new Element("abstract");
 
                                     elem = new Element("label");
                                     elem.setText("Unlabeled");
                                     abs.addContent(elem);
 
                                     elem = new Element("text");
-                                    value = pubmedArt.getChild("front").getChild("article-meta").getChild("abstract").getChildText("p");
+                                    value = pubmedArt.getChild("front").getChild("article-meta").
+                                            getChild("abstract").getChildText("p");
                                     elem.setText(value);
                                     abs.addContent(elem);
 
@@ -1413,7 +1441,7 @@ public class ESearchImpl {
                                 }
                             } else {
                                 for (Element e : nodes) {
-                                    abs = new Element("abstract");
+                                    Element abs = new Element("abstract");
 
                                     elem = new Element("label");
                                     elem.setText(e.getChildText("title"));
@@ -1446,7 +1474,7 @@ public class ESearchImpl {
                             //res.addContent((Element)pubmedArt.clone());
                             //ids.remove(pmid);
                             //}
-                        } // for
+                        } // for pubmedArt
     //XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
     //String xmlString = outputter.outputString(root);
     //System.out.println("\n\nres="+xmlString);
