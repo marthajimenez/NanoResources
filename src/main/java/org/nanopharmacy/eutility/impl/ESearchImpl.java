@@ -703,7 +703,6 @@ public class ESearchImpl {
         JSONArray rejected = new JSONArray();      // publicaciones rechazadas debido a su ranking menor a 2
 
         List<Element> pubmedArtList = new ArrayList<>(64);
-        List<String> accepted;
         List<Element> abstractLst;
         Document doc;
         try {
@@ -749,14 +748,16 @@ public class ESearchImpl {
         } catch (JDOMException jde) {
             return null;
         }
-        accepted = new ArrayList<>(pubmedArtList.size());
+        StringBuilder acceptedPubMed = new StringBuilder(512);
+        int accepted = 0;
         for (Element pubmedArt : pubmedArtList) {
             pmid = pubmedArt.getChildText("pmid");
-            if (pmid != null && !pmid.isEmpty() && accepted.contains(pmid)) {
+            if (pmid != null && !pmid.isEmpty() && acceptedPubMed.indexOf(pmid) >= 0) {
                 System.out.println("pmid repetido: " + pmid);
                 continue;
             } else if (pmid != null && !pmid.isEmpty()) {
-                accepted.add(pmid);
+                acceptedPubMed.append(pmid).append(",");
+                accepted++;
             }
             rankMax = 0;
             abstractLst = pubmedArt.getChildren("abstract");
@@ -812,7 +813,7 @@ public class ESearchImpl {
         //}
         doc = null;
         System.out.println("total de recuperados = " + pubmedArtList.size());
-        System.out.println("total de aceptados (xml) = " + accepted.size());
+        System.out.println("total de no repetidos (xml) = " + accepted);
         System.out.println("total de aceptados (json) = " + outstanding.length());
 
         try {
@@ -974,13 +975,13 @@ public class ESearchImpl {
             }
             
             if (count > 0) {
-//                System.out.println("Articulos en busqueda PubMed: " + count);
+                System.out.println("Articulos en busqueda PubMed: " + count);
                 spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PUBMED);
                 spec = spec.replaceFirst(Token_QryKEY, qryKey);
                 spec = spec.replaceFirst(Token_WebENV, webEnv);
                 spec = spec.replaceFirst(Token_RetStart, "0");
                 spec = spec.replaceFirst(Token_RetMax, Integer.toString(count));
-//                System.out.println("\nURL:\n" + spec);
+                System.out.println("\nURL:\n" + spec);
                 cmd = new URL(spec);
                 conex = (HttpURLConnection) cmd.openConnection();
                 conex.setConnectTimeout(30000);
@@ -1004,7 +1005,6 @@ public class ESearchImpl {
                     List<Element> abstractLst;
                     String pmid, author, month, year, value;
                     //StringBuilder r;
-                    int rank;
 //                    Matcher m;
 
                     try {
@@ -1016,8 +1016,10 @@ public class ESearchImpl {
 
                         //List<String> ids = getValues(nodes);
                         int sinAbstract = 0;
+                        int rankCero = 0;
                         List<Element> pubmedArtList = elem.getChildren("PubmedArticle");
                         for (Element pubmedArt : pubmedArtList) {
+                            int rank = 0;
                             String articleTite = null;
                             if (pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Abstract") == null) {
                                 sinAbstract++;
@@ -1059,6 +1061,10 @@ public class ESearchImpl {
                                 abs.addContent(elem);
 
                                 art.addContent(abs);
+                            }
+                            if (rank == 0) {
+                                rankCero++;
+                                continue;
                             }
 
                             elem = new Element("title");
@@ -1111,7 +1117,8 @@ public class ESearchImpl {
 
                             root.addContent(art);
                         }
-//                        System.out.println("*** Sin abstract: " + sinAbstract);
+                        System.out.println("*** Sin abstract: " + sinAbstract);
+                        System.out.println("Con rank igual a cero: " + rankCero);
     //XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
     //String xmlString = outputter.outputString(root);
     //System.out.println("\nres="+xmlString);
@@ -1230,7 +1237,7 @@ public class ESearchImpl {
             }
 
             if (count > 0) {
-//                System.out.println("\nArticulos en busqueda PMC: " + count);
+                System.out.println("\nArticulos en busqueda PMC: " + count);
                 spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PMC);
                 spec = spec.replaceFirst(Token_QryKEY, qryKey);
                 spec = spec.replaceFirst(Token_WebENV, webEnv);
@@ -1260,7 +1267,6 @@ public class ESearchImpl {
                     String pmc, author, day, month, year, value;
                     //StringBuilder r;
                     //Document d;
-                    int rank;
 
                     try {
                         lXPath = XPath.newInstance("//pmc-articleset");
@@ -1271,7 +1277,9 @@ public class ESearchImpl {
 
                         List<Element> pubmedArtList = elem.getChildren("article");
                         int articulosEnXML = 0;
+                        int rankCero = 0;
                         for (Element pubmedArt : pubmedArtList) {
+                            int rank = 0;
                             articulosEnXML++;
                             pubmedArt.removeChild("body");
                             pubmedArt.removeChild("back");
@@ -1282,8 +1290,6 @@ public class ESearchImpl {
                             elem.removeChild("custom-meta-group");
 
                             Document d = new Document((Element) (pubmedArt.clone()));
-                            //String pmid = pubmedArt.getChild("MedlineCitation").getChildText("PMID");
-                            //if(ids.contains(pmid)) {
                             Element art = new Element("article");
                             elem = new Element("title");
                             elem.setText(pubmedArt.getChild("front").getChild("article-meta").
@@ -1450,6 +1456,7 @@ public class ESearchImpl {
                                     art.addContent(abs);
                                 }
                             } else {
+                                boolean atLeastOneAbstract = false;
                                 for (Element e : nodes) {
                                     Element abs = new Element("abstract");
 
@@ -1459,33 +1466,44 @@ public class ESearchImpl {
 
                                     elem = new Element("text");
                                     value = e.getChildText("p");
-                                    elem.setText(value);
-                                    abs.addContent(elem);
+                                    if (value != null) {
+                                        elem.setText(value);
+                                        abs.addContent(elem);
 
-                                    elem = new Element("prognosis");
-                                    elem.setText(value.contains("prognosis") ? "1" : "0");
-                                    abs.addContent(elem);
-                                    elem = new Element("treatment");
-                                    elem.setText(value.contains("treatment") ? "1" : "0");
-                                    abs.addContent(elem);
-                                    elem = new Element("prediction");
-                                    elem.setText(value.contains("predict") ? "1" : "0");
-                                    abs.addContent(elem);
+                                        elem = new Element("prognosis");
+                                        elem.setText(value.contains("prognosis") ? "1" : "0");
+                                        abs.addContent(elem);
+                                        elem = new Element("treatment");
+                                        elem.setText(value.contains("treatment") ? "1" : "0");
+                                        abs.addContent(elem);
+                                        elem = new Element("prediction");
+                                        elem.setText(value.contains("predict") ? "1" : "0");
+                                        abs.addContent(elem);
 
-                                    rank = Utils.getRanking(value, geneName, molecularAlt);
-                                    elem = new Element("rank");
-                                    elem.setText(Integer.toString(rank));
-                                    abs.addContent(elem);
+                                        rank = Utils.getRanking(value, geneName, molecularAlt);
+                                        elem = new Element("rank");
+                                        elem.setText(Integer.toString(rank));
+                                        abs.addContent(elem);
 
-                                    art.addContent(abs);
+                                        art.addContent(abs);
+                                        atLeastOneAbstract = true;
+                                    }
                                 }
+                                if (!atLeastOneAbstract) {//No tiene texto en abstract
+                                    continue;
+                                }
+                            }
+                            if (rank == 0) {
+                                rankCero++;
+                                continue;
                             }
                             root.addContent(art);
                             //res.addContent((Element)pubmedArt.clone());
                             //ids.remove(pmid);
                             //}
                         } // for pubmedArt
-//                        System.out.println("Articulos en XML PMC: " + articulosEnXML);
+                        System.out.println("Articulos en XML PMC: " + articulosEnXML);
+                        System.out.println("Excluidos con rank cero: " + rankCero);
     //XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
     //String xmlString = outputter.outputString(root);
     //System.out.println("\n\nres="+xmlString);
