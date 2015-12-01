@@ -79,6 +79,8 @@ public class ESearchImpl {
     
     public static final String ERROR_IN_COMM = "COMMUNICATION_PROBLEM";    // Communication lost with NCBI
     
+    public static final String ERROR_GENERAL = "EXECUTION_ERROR";          //Problema de ejecucion: falta de memoria
+    
     /** año de inicio de periodo de busqueda */
     public static final String Token_LY = "@ly_";
     
@@ -160,22 +162,41 @@ public class ESearchImpl {
      * es excluyente con {@code ellapsedDays}
      * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
      * es excluyente con {@code ellapsedYears}
+     * @param initMonth numero de meses atras, que indica el inicio del periodo de busqueda. 
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
+     * @param finalMonth numero de meses atras, que indica el fin del periodo de busqueda.
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
      * @return Un string que representa <code>CMD_ESearchP</code> con los
      * parámetros del query correspondientes a las fechas de consulta
      */
-    private String getEllapsedTimeQuery(String cmd, final int ellapsedYears, final int ellapsedDays) {
+    private String getEllapsedTimeQuery(String cmd, final int ellapsedYears, final int ellapsedDays,
+            final short initMonth, final short finalMonth) {
+        
         GregorianCalendar tq = new GregorianCalendar();
-        cmd = cmd.replaceFirst(Token_UY, Integer.toString(tq.get(Calendar.YEAR)))
-                .replaceFirst(Token_UM, Integer.toString(tq.get(Calendar.MONTH) + 1))
-                .replaceFirst(Token_UD, Integer.toString(tq.get(Calendar.DATE)));
-        if (ellapsedYears > 0) {
-            tq.add(Calendar.YEAR, -ellapsedYears);
-        } else if (ellapsedDays > 0) {
-            tq.add(Calendar.DAY_OF_YEAR, -ellapsedDays);
+        if (ellapsedYears > 0 || ellapsedDays > 0) {
+            //calcula fechas en base a años o a dias
+            cmd = cmd.replaceFirst(Token_UY, Integer.toString(tq.get(Calendar.YEAR)))
+                    .replaceFirst(Token_UM, Integer.toString(tq.get(Calendar.MONTH) + 1))
+                    .replaceFirst(Token_UD, Integer.toString(tq.get(Calendar.DATE)));
+            if (ellapsedYears > 0) {
+                tq.add(Calendar.YEAR, -ellapsedYears);
+            } else if (ellapsedDays > 0) {
+                tq.add(Calendar.DAY_OF_YEAR, -ellapsedDays);
+            }
+            cmd = cmd.replaceFirst(Token_LY, Integer.toString(tq.get(Calendar.YEAR)))
+                    .replaceFirst(Token_LM, Integer.toString(tq.get(Calendar.MONTH) + 1))
+                    .replaceFirst(Token_LD, Integer.toString(tq.get(Calendar.DATE)));
+        } else if (initMonth >= 0 && finalMonth > 0) {
+            tq.add(Calendar.MONTH, -initMonth);
+            cmd = cmd.replaceFirst(Token_UY, Integer.toString(tq.get(Calendar.YEAR)))
+                    .replaceFirst(Token_UM, Integer.toString(tq.get(Calendar.MONTH) + 1))
+                    .replaceFirst(Token_UD, Integer.toString(tq.get(Calendar.DATE)));
+            tq.add(Calendar.MONTH, initMonth);
+            tq.add(Calendar.MONTH, -finalMonth);
+            cmd = cmd.replaceFirst(Token_LY, Integer.toString(tq.get(Calendar.YEAR)))
+                    .replaceFirst(Token_LM, Integer.toString(tq.get(Calendar.MONTH) + 1))
+                    .replaceFirst(Token_LD, Integer.toString(tq.get(Calendar.DATE)));
         }
-        cmd = cmd.replaceFirst(Token_LY, Integer.toString(tq.get(Calendar.YEAR)))
-                .replaceFirst(Token_LM, Integer.toString(tq.get(Calendar.MONTH) + 1))
-                .replaceFirst(Token_LD, Integer.toString(tq.get(Calendar.DATE)));
         return cmd;
     }
 
@@ -653,10 +674,14 @@ public class ESearchImpl {
      * @param geneName s&iacute;mbolo del gen a buscar en los art&iacute;culos, por ejemplo: {@literal SF3B1}
      * @param molecularAlt s&iacute;mbolo de la alteraci&oacute;n molecular relacionada con el gen. Por ejemplo: {@literal Lys700Glu}.
      * @param ellapsedYears n&uacute;mero de años a considerar para la fecha de publicaci&oacute;n de los art&iacute;culos,
-     * es excluyente con {@code ellapsedDays}
+     *        es excluyente con {@code ellapsedDays}
      * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
-     * es excluyente con {@code ellapsedYears}
-     * coincidentes. La b&uacute;squeda comprende ese n&uacute;mero de años at&aacute;s a partir del día actual.
+     *        es excluyente con {@code ellapsedYears}
+     *        coincidentes. La b&uacute;squeda comprende ese n&uacute;mero de años at&aacute;s a partir del día actual.
+     * @param initMonth numero de meses atras, que indica el inicio del periodo de busqueda. 
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
+     * @param finalMonth numero de meses atras, que indica el fin del periodo de busqueda.
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
      * @return un objeto JSON con la informaci&oacute;n de las publicaciones m&eacute;dicas
      * referentes a los valores de los par&aacute;metros. Este objeto incluye dos
      * arreglos: El arrego "outstanding" contiene las publicaciones provenientes
@@ -670,7 +695,7 @@ public class ESearchImpl {
      * @throws java.io.IOException
      */
     public JSONObject getPublicationsInfo(final String geneName, final String molecularAlt,
-            final int ellapsedYears, final int ellapsedDays)
+            final int ellapsedYears, final int ellapsedDays, final short initMonth, final short finalMonth)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
         
         JSONObject publications = new JSONObject();// publicaciones aceptadas y rechazadas
@@ -682,20 +707,30 @@ public class ESearchImpl {
         List<Element> abstractLst;
         Document doc;
         try {
-            doc = getPublicationsDom(geneName, molecularAlt, ellapsedYears, ellapsedDays);
+            if (ellapsedYears > 0 || ellapsedDays > 0 || 
+                    (initMonth >= 0 && finalMonth > 0 && initMonth < finalMonth)) {
+                doc = getPublicationsDom(geneName, molecularAlt, ellapsedYears, ellapsedDays, initMonth, finalMonth);
+            } else {
+                doc = null;
+                throw new NoDataException("Periodo de busqueda mal definido");
+            }
         } catch (NoDataException nde) {
             JSONObject errorData = new JSONObject();
             errorData.put("error", ESearchImpl.ERROR_INFO_NOT_FOUND);
             errorData.put("msg", "No data for your search");
             publications.put("error", errorData);
-            System.out.println("Sin informacion de NCBI");
             doc = null;
         } catch (IOException ioe) {
             JSONObject errorData = new JSONObject();
             errorData.put("error", ESearchImpl.ERROR_IN_COMM);
             errorData.put("msg", "Communications problem");
             publications.put("error", errorData);
-            System.out.println("Por problemas de comunicacion");
+            doc = null;
+        } catch (Exception e) {
+            JSONObject errorData = new JSONObject();
+            errorData.put("error", ESearchImpl.ERROR_GENERAL);
+            errorData.put("msg", "General problem");
+            publications.put("error", errorData);
             doc = null;
         }
         
@@ -802,6 +837,10 @@ public class ESearchImpl {
      * es excluyente con {@code ellapsedDays}
      * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
      * es excluyente con {@code ellapsedYears}
+     * @param initMonth numero de meses atras, que indica el inicio del periodo de busqueda. 
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
+     * @param finalMonth numero de meses atras, que indica el fin del periodo de busqueda.
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
      * @return Un documento JDOM con la estructura <em>PubmedArticleSet</em> que
      * contiene dos elementos <em>ArticleList</em>, el primero corresponde a los datos extraidos de
      * la base de datos PubMed y el segundo de PMC.
@@ -812,14 +851,14 @@ public class ESearchImpl {
      * @throws java.io.IOException
      */
     public Document getPublicationsDom(final String geneName, final String molecularAlt,
-            int ellapsedYears, final int ellapsedDays)
+            int ellapsedYears, final int ellapsedDays, final short initMonth, final short finalMonth)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
         
         Document doc = new Document(new Element("PubmedArticleSet"));
         Element elem;
-        elem = getPubMedDom(Db_PUBMED, geneName, molecularAlt, ellapsedYears, ellapsedDays);
+        elem = getPubMedDom(Db_PUBMED, geneName, molecularAlt, ellapsedYears, ellapsedDays, initMonth, finalMonth);
         doc.getRootElement().addContent(elem);
-        elem = getPMCDom(Db_PMC, geneName, molecularAlt, ellapsedYears, ellapsedDays);
+        elem = getPMCDom(Db_PMC, geneName, molecularAlt, ellapsedYears, ellapsedDays, initMonth, finalMonth);
         doc.getRootElement().addContent(elem);
         return doc;
     }
@@ -841,6 +880,10 @@ public class ESearchImpl {
      * es excluyente con {@code ellapsedDays}
      * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
      * es excluyente con {@code ellapsedYears}
+     * @param initMonth numero de meses atras, que indica el inicio del periodo de busqueda. 
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
+     * @param finalMonth numero de meses atras, que indica el fin del periodo de busqueda.
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
      * @return Un elemento JDOM con la estructura <em>ArticleList</em> que
      * contiene la publicaciones médicas relacionadas con el gen en cuestión.
      * @throws org.nanopharmacy.eutility.impl.NoDataException
@@ -850,7 +893,7 @@ public class ESearchImpl {
      * @throws java.io.IOException
      */
     public Element getPubMedDom(final String dbName, final String geneName, final String molecularAlt,
-            int ellapsedYears, final int ellapsedDays)
+            int ellapsedYears, final int ellapsedDays, final short initMonth, final short finalMonth)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
         
         Element root = new Element("ArticleList");
@@ -858,7 +901,7 @@ public class ESearchImpl {
         URL cmd;
         HttpURLConnection conex;
         String spec;
-        spec = getEllapsedTimeQuery(CMD_ESearchP, ellapsedYears, ellapsedDays);
+        spec = getEllapsedTimeQuery(CMD_ESearchP, ellapsedYears, ellapsedDays, initMonth, finalMonth);
         spec = spec.replaceFirst(TOKEN_ALTMOL, getQueryValue(molecularAlt));
         spec = spec.replaceFirst(Token_DbNAME, dbName);
         spec = spec.replaceFirst(Token_GENE, geneName);
@@ -873,6 +916,7 @@ public class ESearchImpl {
         try {
             InputStream in = conex.getInputStream();
             doc = getXML(in);
+            in.close();
         } catch (JDOMException jde) {
             doc = null;
         } finally {
@@ -911,12 +955,14 @@ public class ESearchImpl {
                 }
                 webEnv = elem.getValue();
 
-                lXPath = XPath.newInstance("//Id");
-                nodes = lXPath.selectNodes(doc);
+                //lXPath = XPath.newInstance("//Id");
+                //nodes = lXPath.selectNodes(doc);
             } catch (JDOMException jde) {
                 qryKey = null;
                 webEnv = null;
             }
+            doc = null;
+            lXPath = null;
 ////////////////////////////////////////////////////////////////////////////////            
             if (qryKey == null || webEnv == null) {
                 throw new UseHistoryException("entrez tal vez no reconocio la consulta, por lo que no devolvio queryKey ni WebEnv");
@@ -938,6 +984,7 @@ public class ESearchImpl {
                 try {
                     InputStream in = conex.getInputStream();
                     doc = getXML(in);
+                    in.close();
                 } catch (JDOMException jde) {
                     doc = null;
                 } finally {
@@ -965,7 +1012,7 @@ public class ESearchImpl {
                             if (pubmedArt.getChild("MedlineCitation").getChild("Article").getChild("Abstract") == null) {
                                 continue;
                             }
-                            Document d = new Document((Element) (pubmedArt.clone()));
+                            //Document d = new Document((Element) (pubmedArt.clone()));
                             art = new Element("article");
 
                             abstractLst = pubmedArt.getChild("MedlineCitation").getChild("Article")
@@ -1082,6 +1129,10 @@ public class ESearchImpl {
      * es excluyente con {@code ellapsedDays}
      * @param ellapsedDays n&uacute;mero de d&iacute;as atr&aacute;s a partir de la fecha actual para realizar una b&uacute;squeda,
      * es excluyente con {@code ellapsedYears}
+     * @param initMonth numero de meses atras, que indica el inicio del periodo de busqueda. 
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
+     * @param finalMonth numero de meses atras, que indica el fin del periodo de busqueda.
+     *        El uso de {@code initMonth} y {@code finalMonth} excluye el uso de los parametros {@code ellapsedYears} y {@code ellapsedDays}
      * @return Un elemento JDOM con la estructura <em>ArticleList</em> que
      * contiene la publicaciones médicas relacionadas con el gen en cuestión.
      * @throws org.nanopharmacy.eutility.impl.NoDataException
@@ -1091,14 +1142,14 @@ public class ESearchImpl {
      * @throws java.io.IOException
      */
     public Element getPMCDom(final String dbName, final String geneName, final String molecularAlt,
-            int ellapsedYears, final int ellapsedDays)
+            int ellapsedYears, final int ellapsedDays, final short initMonth, final short finalMonth)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
         Element root = new Element("ArticleList");
         Document doc;
         URL cmd;
         HttpURLConnection conex;
         String spec;
-        spec = getEllapsedTimeQuery(CMD_ESearchP, ellapsedYears, ellapsedDays);
+        spec = getEllapsedTimeQuery(CMD_ESearchP, ellapsedYears, ellapsedDays, initMonth, finalMonth);
         spec = spec.replaceFirst(TOKEN_ALTMOL, getQueryValue(molecularAlt));
         spec = spec.replaceFirst(Token_DbNAME, dbName);
         spec = spec.replaceFirst(Token_GENE, geneName);
