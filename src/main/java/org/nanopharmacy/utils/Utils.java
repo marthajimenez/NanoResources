@@ -353,29 +353,29 @@ public class Utils {
                     //si ya existe el articulo, obtiene la información del artículo
                     dataNewArticle = obj;
                     idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
+                    //Aqui inicia temporal en lo que se modifica lo de Jose
                     //Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con el siguiente articulo 
-                    /*String[] propertiesName = {"article", "search"};
+                    String[] propertiesName = {"article", "search"};
                     String[] propertiesValues = {idArticle, idSearch};
                     DataObject obj1 = getDataProperty(dsArtSearch, propertiesName, propertiesValues, null, null);
-                    rows = obj1.getDataObject("response").getInt("totalRows");*/
+                    rows = obj1.getDataObject("response").getInt("totalRows");
                     //Reviso si ya existe esta asociacion de busqueda y articulo, salgo
-                    /*if (rows > 0) {
-                        
-                     continue;
-                     } else {
-                     //Sino existe asociacion significa que es nuevo para la busqueda
+                    if (rows > 0) {
+
+                        continue;
+                    } else {
+                        //Sino existe asociacion significa que es nuevo para la busqueda
+                        countNewArt++;
+                        if (ranking > 5) {
+                            countRecommended++;
+                        }
+                    }
+                    //Aqui termina en lo que se modifica lo de Jose
+/*Remover esto cuando ya funione lo de Jose
                      countNewArt++;
                      if (ranking > 5) {
                      countRecommended++;
-                     }
                      }*/
-                    /*if (rows > 0) {
-                        System.out.println("Articulo ya existente para el Jose: " + idArticle);
-                    }*/
-                    countNewArt++;
-                    if (ranking > 5) {
-                        countRecommended++;
-                    }
                 }
                 //almacena la asociación entre una búsqueda y un artículo
                 DataObject newArtSearch = new DataObject();
@@ -384,7 +384,7 @@ public class Utils {
                 newArtSearch.put("ranking", ranking);
                 newArtSearch.put("status", 1);
                 dsArtSearch.addObj(newArtSearch);
-               // if (ranking > 5) {
+                // if (ranking > 5) {
                 //     countRecommended++;
                 // }
                 // countNewArt++;
@@ -408,7 +408,7 @@ public class Utils {
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
          */
-        public static String saveUpdateArticles(JSONObject publications, String idSearch, int countNewArt, int countRecommended) throws IOException, InterruptedException {
+        public static void saveUpdateArticles(JSONObject publications, String idSearch) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
             SWBDataSource dsSearch = engine.getDataSource("Search");
@@ -416,8 +416,8 @@ public class Utils {
             DataObject datObjSearch = dsSearch.fetchObjById(idSearch);
 
             JSONArray arrOutstanding = publications.getJSONArray("outstanding");
-//            int countNewArt = 0;
-//            int countRecommended = 0;
+            int countNewArt = 0;
+            int countRecommended = 0;
             for (int i = 0; i < arrOutstanding.length(); i++) {//
                 JSONObject art = arrOutstanding.getJSONObject(i);
 
@@ -515,7 +515,7 @@ public class Utils {
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
             dsSearch.updateObj(datObjSearch);
-            return countNewArt + "," + countRecommended;
+            //return countNewArt + "," + countRecommended;
         }
 
         /**
