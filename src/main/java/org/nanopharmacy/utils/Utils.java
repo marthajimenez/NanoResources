@@ -361,7 +361,6 @@ public class Utils {
                     rows = obj1.getDataObject("response").getInt("totalRows");
                     //Reviso si ya existe esta asociacion de busqueda y articulo, salgo
                     if (rows > 0) {
-
                         continue;
                     } else {
                         //Sino existe asociacion significa que es nuevo para la busqueda
@@ -389,6 +388,7 @@ public class Utils {
                 // }
                 // countNewArt++;
             }
+            arrOutstanding = null;
             //asigna el número de artículos nuevos
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
@@ -416,8 +416,8 @@ public class Utils {
             DataObject datObjSearch = dsSearch.fetchObjById(idSearch);
 
             JSONArray arrOutstanding = publications.getJSONArray("outstanding");
-            int countNewArt = 0;
-            int countRecommended = 0;
+            int countNewArt = datObjSearch.get("notification") != null ? datObjSearch.getInt("notification") : 0;
+            int countRecommended = datObjSearch.get("recommeded") != null ? datObjSearch.getInt("recommeded") : 0;
             for (int i = 0; i < arrOutstanding.length(); i++) {//
                 JSONObject art = arrOutstanding.getJSONObject(i);
 
@@ -434,15 +434,15 @@ public class Utils {
                 String idArticle = null;
                 int status = 0;
                 int rows = 0;
-                //Hace una petición a la BD a traves de la propiedad "pmid" del artículo
-                if (pmid != 0) {
-                    obj = getDataProperty(ds, "pmid", null, pmid);
+                //Hace una petición a la BD a traves de la propiedad "pmcid" del artículo
+                if (pmc != 0) {
+                    obj = getDataProperty(ds, "pmcid", null, pmc);
                     rows = obj.getDataObject("response").getInt("totalRows");
                 }
                 //Sino trae información la consulta, hace una segunda petición a la BD a traves
-                // de la propiedad "pmcid"
-                if (rows == 0 && pmc != 0) {
-                    obj = getDataProperty(ds, "pmcid", null, pmc);
+                // de la propiedad "pmid"    
+                if (rows == 0 && pmid != 0) {
+                    obj = getDataProperty(ds, "pmid", null, pmid);
                     rows = obj.getDataObject("response").getInt("totalRows");
                 }
 
@@ -452,52 +452,63 @@ public class Utils {
                     idArticle = dataNewArticle.getDataObject("response").getDataObject("data").getString("_id");
                     status = 1;
                     countNewArt++;
+                    if (ranking > 5) {
+                        countRecommended++;
+                    }
                 } else {
                     //si ya existe el articulo, obtiene la información del artículo
                     dataNewArticle = obj;
                     idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
 
-                    //Consulta la tabla de asociación entre enfermedades y genes y si ya existe la relación, continua con la siguiente enfermedad 
-                    /*String[] propertiesName = {"cancer", "search"};
-                     String[] propertiesValues = {idArticle, idSearch};
-                     DataObject obj1 = getDataProperty(dsArtSearch, propertiesName, propertiesValues, null, null);
-                     rows = obj1.getDataObject("response").getInt("totalRows");
-                     if (rows > 0) {
-                     continue;
-                     }*/
-                    //Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con la siguiente enfermedad 
-                    DataObject obj1 = getDataProperty(dsArtSearch, "article", idArticle, 0);
+                    //Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con el siguiente articulo 
+                    String[] propertiesName = {"article", "search"};
+                    String[] propertiesValues = {idArticle, idSearch};
+                    DataObject obj1 = getDataProperty(dsArtSearch, propertiesName, propertiesValues, null, null);
                     rows = obj1.getDataObject("response").getInt("totalRows");
-                    int datRanking = 0, datStatus = 0;
-                    boolean isValid = true;
-
+                    //Reviso si ya existe esta asociacion de busqueda y articulo, salgo
                     if (rows > 0) {
-                        DataList list = obj1.getDataObject("response").getDataList("data");
-                        for (int j = 0; j < list.size(); j++) {
-                            DataObject articleList = list.getDataObject(j);
-                            if (articleList.getString("search") != null && articleList.getString("search").equals(idSearch)) {
-                                if (articleList.containsKey("ranking")) {
-                                    datRanking = articleList.getInt("ranking");
-                                }
-                                if (articleList.containsKey("status")) {
-                                    datStatus = articleList.getInt("status");
-                                }
-                                isValid = false;
-                                break;
-                            }
-                        }
-
-                        if (datStatus == 1) {
-                            countNewArt++;
-                        }
-                        if (datRanking > 5) {
+                        continue;
+                    } else {
+                        //Sino existe asociacion significa que es nuevo para la busqueda
+                        countNewArt++;
+                        if (ranking > 5) {
                             countRecommended++;
                         }
                     }
-                    //Compara que el articulo y la busqueda sean el mismo registro
-                    if (!isValid) {
-                        continue;
-                    }
+                    /*//Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con la siguiente enfermedad 
+                     DataObject obj1 = getDataProperty(dsArtSearch, "article", idArticle, 0);
+                     rows = obj1.getDataObject("response").getInt("totalRows");
+                     int datRanking = 0, datStatus = 0;
+                     boolean isValid = true;
+
+                     if (rows > 0) {
+                     DataList list = obj1.getDataObject("response").getDataList("data");
+                     for (int j = 0; j < list.size(); j++) {
+                     DataObject articleList = list.getDataObject(j);
+                     if (articleList.getString("search") != null && articleList.getString("search").equals(idSearch)) {
+                     if (articleList.containsKey("ranking")) {
+                     datRanking = articleList.getInt("ranking");
+                     }
+                     if (articleList.containsKey("status")) {
+                     datStatus = articleList.getInt("status");
+                     }
+                     isValid = false;
+                     break;
+                     }
+                     }
+
+                     if (datStatus == 1) {
+                     countNewArt++;
+                     }
+                     if (datRanking > 5) {
+                     countRecommended++;
+                     }
+                     }
+                     //Compara que el articulo y la busqueda sean el mismo registro
+                     if (!isValid) {
+                     continue;
+                     }*/
+                    art = null;
                 }
                 //almacena la asociación entre una búsqueda y un artículo
                 DataObject newArtSearch = new DataObject();
@@ -507,10 +518,11 @@ public class Utils {
                 newArtSearch.put("status", status);
                 dsArtSearch.addObj(newArtSearch);
 
-                if (ranking > 5) {
-                    countRecommended++;
-                }
+                /*if (ranking > 5) {
+                 countRecommended++;
+                 }*/
             }
+            arrOutstanding = null;
             //asigna el número de artículos nuevos y recomendados
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
@@ -744,7 +756,6 @@ public class Utils {
             }
         }
     }
-
     /**
      * <p>
      * Provee funciones para la manipulaci&oacute;n de cadenas de texto tal como

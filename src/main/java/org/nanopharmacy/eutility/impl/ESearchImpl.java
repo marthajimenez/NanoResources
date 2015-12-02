@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1030,9 +1031,12 @@ public class ESearchImpl {
 
                             abstractLst = pubmedArt.getChild("MedlineCitation").getChild("Article")
                                     .getChild("Abstract").getChildren("AbstractText");
+                            String tmpPrognosis = "0";
+                            String tmpTreatment = "0";
+                            String tmpPrediction = "0";
+                            Element abs = new Element("abstract");
+                            
                             for (Element e : abstractLst) {
-                                Element abs = new Element("abstract");
-
                                 elem = new Element("label");
                                 elem.setText(e.getAttributeValue("Label") == null ? "Unlabeled" : e.getAttributeValue("Label"));
                                 abs.addContent(elem);
@@ -1041,27 +1045,35 @@ public class ESearchImpl {
                                 value = e.getValue();
                                 elem.setText(value);
                                 abs.addContent(elem);
-
+                                
                                 Matcher m = prognosisPtrn.matcher(value);
-                                elem = new Element("prognosis");
-                                elem.setText(m.matches() ? "1" : "0");
-                                abs.addContent(elem);
-                                m = treatmentPtrn.matcher(value);
-                                elem = new Element("treatment");
-                                elem.setText(m.matches() ? "1" : "0");
-                                abs.addContent(elem);
-                                m = predictPtrn.matcher(value);
-                                elem = new Element("prediction");
-                                elem.setText(m.matches() ? "1" : "0");
-                                abs.addContent(elem);
-
+                                if(m.matches()) {
+                                    tmpPrognosis = "1";
+                                }
+                                Matcher m1 = treatmentPtrn.matcher(value);
+                                if(m1.matches()) {
+                                    tmpTreatment = "1";
+                                }
+                                Matcher m2 = predictPtrn.matcher(value);
+                                 if(m2.matches()) {
+                                    tmpPrediction = "1";
+                                }
                                 rank = Utils.getRanking(value, geneName, molecularAlt);
                                 elem = new Element("rank");
                                 elem.setText(Integer.toString(rank));
                                 abs.addContent(elem);
-
-                                art.addContent(abs);
                             }
+                            elem = new Element("prognosis");
+                            elem.setText(tmpPrognosis);
+                            abs.addContent(elem);
+                            elem = new Element("treatment");
+                            elem.setText(tmpTreatment);
+                            abs.addContent(elem);
+                            elem = new Element("prediction");
+                            elem.setText(tmpPrediction);
+                            abs.addContent(elem);
+                            art.addContent(abs);
+                            
                             if (rank == 0) {
                                 rankCero++;
                                 continue;
