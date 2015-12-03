@@ -171,7 +171,7 @@ public class ESearchImpl {
      * parámetros del query correspondientes a las fechas de consulta
      */
     private String getEllapsedTimeQuery(String cmd, final int ellapsedYears, final int ellapsedDays,
-            final short initMonth, final short finalMonth) {
+            final int initMonth, final int finalMonth) {
         
         GregorianCalendar tq = new GregorianCalendar();
         if (ellapsedYears > 0 || ellapsedDays > 0) {
@@ -228,6 +228,7 @@ public class ESearchImpl {
             } else {
                 throw nde;
             }
+            nde.printStackTrace();
         }
         
         if (docSum != null) {
@@ -247,9 +248,11 @@ public class ESearchImpl {
                     gene.put("gene", geneData);
                 } catch (JSONException jse) {
                     Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
+                    jse.printStackTrace();
                     throw new NoDataException("no se pudo crear el objeto json");
                 }
             } catch (JSONException jse) {
+                jse.printStackTrace();
                 Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
             }/*finally {
                 
@@ -299,6 +302,7 @@ public class ESearchImpl {
             doc = getXML(in);
         } catch (JDOMException jde) {
             doc = null;
+            jde.printStackTrace();
         } finally {
             conex.disconnect();
         }
@@ -323,6 +327,7 @@ public class ESearchImpl {
             } catch (JDOMException jde) {
                 qryKey = null;
                 webEnv = null;
+                jde.printStackTrace();
             }
 
             if (qryKey == null || webEnv == null) {
@@ -343,6 +348,7 @@ public class ESearchImpl {
                 doc = getXML(in);
             } catch (JDOMException jde) {
                 doc = null;
+                jde.printStackTrace();
             } finally {
                 conex.disconnect();
             }
@@ -355,6 +361,7 @@ public class ESearchImpl {
                         throw new NoDataException("NO_GENE_INFO_FOUND");
                     }
                 } catch (JDOMException jde) {
+                    jde.printStackTrace();
                     throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
                 }
             } // if esummary
@@ -392,6 +399,7 @@ public class ESearchImpl {
                     alteration.put("conceptId", docSum.getChildText("ConceptId"));
                     diseases.put(alteration);
                 } catch (JSONException jse) {
+                    jse.printStackTrace();
                     Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
                 }
             }
@@ -433,6 +441,7 @@ public class ESearchImpl {
             InputStream in = conex.getInputStream();
             doc = getXML(in);
         } catch (JDOMException jde) {
+            jde.printStackTrace();
             doc = null;
         } finally {
             conex.disconnect();
@@ -458,6 +467,7 @@ public class ESearchImpl {
             } catch (JDOMException jde) {
                 qryKey = null;
                 webEnv = null;
+                jde.printStackTrace();
             }
             
             if (qryKey == null || webEnv == null) {
@@ -478,6 +488,7 @@ public class ESearchImpl {
                 doc = getXML(in);
             } catch (JDOMException jde) {
                 doc = null;
+                jde.printStackTrace();
             } finally {
                 conex.disconnect();
             }
@@ -491,6 +502,7 @@ public class ESearchImpl {
                     }
 
                 } catch (JDOMException jde) {
+                    jde.printStackTrace();
                     throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
                 }
             } // if esummary
@@ -537,6 +549,7 @@ public class ESearchImpl {
                     dataLst.put(aux);
                 } catch (JSONException jse) {
                     Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
+                    jse.printStackTrace();
                 }
 
             }
@@ -580,7 +593,9 @@ public class ESearchImpl {
             InputStream in = conex.getInputStream();
             doc = getXML(in);
         } catch (JDOMException jde) {
+            System.out.println("Error in getTestingLabDom: " + jde);
             doc = null;
+            jde.printStackTrace();
         } finally {
             conex.disconnect();
         }
@@ -593,6 +608,7 @@ public class ESearchImpl {
                 lXPath = XPath.newInstance(Elem_SrhRES + "/" + Elem_QryKEY);
                 elem = (Element) lXPath.selectSingleNode(doc);
                 if (elem == null) {
+                    System.out.println("no se encontraron los datos para el parametro de consulta: queryKey");
                     throw new UseHistoryException("no se encontraron los datos para el parametro de consulta: queryKey");
                 }
                 qryKey = elem.getValue();
@@ -600,6 +616,7 @@ public class ESearchImpl {
                 lXPath = XPath.newInstance(Elem_SrhRES + "/" + Elem_WebENV);
                 elem = (Element) lXPath.selectSingleNode(doc);
                 if (elem == null) {
+                    System.out.println("no se encontraron los datos para el parametro de consulta: WebEnv=");
                     throw new UseHistoryException("no se encontraron los datos para el parametro de consulta: WebEnv=");
                 }
                 webEnv = elem.getValue();
@@ -607,11 +624,14 @@ public class ESearchImpl {
                 lXPath = XPath.newInstance("//Id");
                 idList = lXPath.selectNodes(doc);
             } catch (JDOMException jde) {
+                System.out.println("Error in getTestingLabDom doc: " + jde);
                 qryKey = null;
                 webEnv = null;
+                jde.printStackTrace();
             }
 ////////////////////////////////////////////////////////////////////////////////            
             if (qryKey == null || webEnv == null) {
+                System.out.println("entrez tal vez no reconocio la consulta, por lo que no devolvio queryKey ni WebEnv");
                 throw new UseHistoryException("entrez tal vez no reconocio la consulta, por lo que no devolvio queryKey ni WebEnv");
             }
             spec = CMD_ESummaryL.replaceFirst(Token_DbNAME, Db_GTR);
@@ -628,7 +648,9 @@ public class ESearchImpl {
                 InputStream in = conex.getInputStream();
                 doc = getXML(in);
             } catch (JDOMException jde) {
+                System.out.println("Error in getTestingLabDom 2: " + jde);
                 doc = null;
+                jde.printStackTrace();
             } finally {
                 conex.disconnect();
             }
@@ -637,6 +659,7 @@ public class ESearchImpl {
                     lXPath = XPath.newInstance("//DocumentSummarySet");
                     elem = (Element) lXPath.selectSingleNode(doc);
                     if (elem == null) {
+                        System.out.println("no se encontraron elementos DocumentSummary para el gen con nombre " + geneName);
                         throw new NoDataException("no se encontraron elementos DocumentSummary para el gen con nombre " + geneName);
                     }
 
@@ -653,6 +676,8 @@ public class ESearchImpl {
 //String xmlString = outputter.outputString(res);
 //System.out.println("\nres="+xmlString);
                 } catch (JDOMException jde) {
+                    System.out.println("Error in getTestingLabDom 3: " + jde);
+                    jde.printStackTrace();
                     throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
                 }
             } // if esummary
@@ -696,7 +721,7 @@ public class ESearchImpl {
      * @throws java.io.IOException
      */
     public JSONObject getPublicationsInfo(final String geneName, final String molecularAlt,
-            final int ellapsedYears, final int ellapsedDays, final short initMonth, final short finalMonth)
+            final int ellapsedYears, final int ellapsedDays, final int initMonth, final int finalMonth)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
         
         JSONObject publications = new JSONObject();// publicaciones aceptadas y rechazadas
@@ -712,6 +737,7 @@ public class ESearchImpl {
                 doc = getPublicationsDom(geneName, molecularAlt, ellapsedYears, ellapsedDays, initMonth, finalMonth);
             } else {
                 doc = null;
+                System.out.println("Periodo de busqueda mal definido");
                 throw new NoDataException("Periodo de busqueda mal definido");
             }
         } catch (NoDataException nde) {
@@ -719,20 +745,26 @@ public class ESearchImpl {
             errorData.put("error", ESearchImpl.ERROR_INFO_NOT_FOUND);
             errorData.put("msg", "No data for your search");
             publications.put("error", errorData);
+            System.out.println("No data for your search: " + nde);
             doc = null;
+            nde.printStackTrace();
         } catch (IOException ioe) {
             JSONObject errorData = new JSONObject();
             errorData.put("error", ESearchImpl.ERROR_IN_COMM);
             errorData.put("msg", "Communications problem");
             publications.put("error", errorData);
+            System.out.println("Communications problem: " + ioe);
             doc = null;
+            ioe.printStackTrace();
         } catch (Exception e) {
             JSONObject errorData = new JSONObject();
             errorData.put("error", ESearchImpl.ERROR_GENERAL);
             errorData.put("msg", "General problem");
             publications.put("error", errorData);
+            System.out.println("General problem: " + e);
             doc = null;
             Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, e);
+            e.printStackTrace();
         }
         
         XPath lXPath;
@@ -747,6 +779,7 @@ public class ESearchImpl {
                 pubmedArtList = lXPath.selectNodes(doc);
             }
         } catch (JDOMException jde) {
+            jde.printStackTrace();
             return null;
         }
         StringBuilder acceptedPubMed = new StringBuilder(512);
@@ -809,6 +842,7 @@ public class ESearchImpl {
                 }
             } catch (JSONException | NumberFormatException jse) {
                 Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
+                jse.printStackTrace();
             }
         } // for
         //}
@@ -823,6 +857,8 @@ public class ESearchImpl {
                 //publications.put("rejected", rejected);
             }
         } catch (Exception jse) {
+            System.out.println("Error in getPublicationsInfo: " + jse);
+            jse.printStackTrace();
             Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jse);
         }
         return publications;
@@ -855,7 +891,7 @@ public class ESearchImpl {
      * @throws java.io.IOException
      */
     public Document getPublicationsDom(final String geneName, final String molecularAlt,
-            int ellapsedYears, final int ellapsedDays, final short initMonth, final short finalMonth)
+            int ellapsedYears, final int ellapsedDays, final int initMonth, final int finalMonth)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
         
         Document doc = new Document(new Element("PubmedArticleSet"));
@@ -897,7 +933,7 @@ public class ESearchImpl {
      * @throws java.io.IOException
      */
     public Element getPubMedDom(final String dbName, final String geneName, final String molecularAlt,
-            int ellapsedYears, final int ellapsedDays, final short initMonth, final short finalMonth)
+            int ellapsedYears, final int ellapsedDays, final int initMonth, final int finalMonth)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
         
         Element root = new Element("ArticleList");
@@ -923,6 +959,7 @@ public class ESearchImpl {
             in.close();
         } catch (JDOMException jde) {
             doc = null;
+            jde.printStackTrace();
         } finally {
             conex.disconnect();
             conex = null;
@@ -944,6 +981,7 @@ public class ESearchImpl {
                 try {
                     count = Integer.parseInt(elem.getText());
                 } catch (NumberFormatException nfe) {
+                    nfe.printStackTrace();
                     throw new NoDataException("el valor de consulta Count es ilegible");
                 }
 
@@ -963,6 +1001,7 @@ public class ESearchImpl {
             } catch (JDOMException jde) {
                 qryKey = null;
                 webEnv = null;
+                jde.printStackTrace();
             }
             doc = null;
             elem = null;
@@ -993,6 +1032,7 @@ public class ESearchImpl {
                     in.close();
                 } catch (JDOMException jde) {
                     doc = null;
+                    jde.printStackTrace();
                 } finally {
                     conex.disconnect();
                     conex = null;
@@ -1123,6 +1163,7 @@ public class ESearchImpl {
                         System.out.println("*** Sin abstract: " + sinAbstract);
                         System.out.println("Con rank igual a cero: " + rankCero);
                     } catch (JDOMException jde) {
+                        jde.printStackTrace();
                         throw new NoDataException("no se encontro un elemento docsummary para el gen con nombre " + geneName + " y organismo Homo sapiens");
                     }
                 } // if esummary
@@ -1161,7 +1202,7 @@ public class ESearchImpl {
      * @throws java.io.IOException
      */
     public Element getPMCDom(final String dbName, final String geneName, final String molecularAlt,
-            int ellapsedYears, final int ellapsedDays, final short initMonth, final short finalMonth)
+            int ellapsedYears, final int ellapsedDays, final int initMonth, final int finalMonth)
             throws NoDataException, UseHistoryException, MalformedURLException, ProtocolException, IOException {
         Element root = new Element("ArticleList");
         Document doc;
@@ -1186,6 +1227,7 @@ public class ESearchImpl {
             in.close();
         } catch (JDOMException jde) {
             doc = null;
+            jde.printStackTrace();
         } finally {
             conex.disconnect();
             conex = null;
@@ -1205,6 +1247,7 @@ public class ESearchImpl {
                 try {
                     count = Integer.parseInt(elem.getText());
                 } catch (NumberFormatException nfe) {
+                    nfe.printStackTrace();
                     throw new NoDataException("el valor de consulta Count es ilegible");
                 }
 
@@ -1224,6 +1267,7 @@ public class ESearchImpl {
             } catch (JDOMException jde) {
                 qryKey = null;
                 webEnv = null;
+                jde.printStackTrace();
             }
             lXPath = null;
             elem = null;
@@ -1253,6 +1297,7 @@ public class ESearchImpl {
                     in.close();
                 } catch (JDOMException jde) {
                     doc = null;
+                    jde.printStackTrace();
                 } finally {
                     conex.disconnect();
                     conex = null;
@@ -1265,6 +1310,7 @@ public class ESearchImpl {
                         elem = doc.getRootElement();
                         if (elem == null) {
                             throw new NoDataException("no se encontraron elementos DocumentSummary para el gen con nombre " + geneName);
+                            
                         }
                         System.out.println("Nodo raiz: " + elem.getName());
 
@@ -1361,7 +1407,6 @@ public class ESearchImpl {
                                 rankCero++;
                                 continue;
                             }
-                            
                             elem = new Element("title");
                             elem.setText(pubmedArt.getChild("front").getChild("article-meta").
                                     getChild("title-group").getChild("article-title").getValue());
@@ -1434,7 +1479,8 @@ public class ESearchImpl {
                                     getChild("title-group").getChild("article-title").getValue());
                             
                             Element magazine = pubmedArt.getChild("front").getChild("journal-meta").
-                                    getChild("journal-title-group").getChild("journal-title");
+                                    getChild("journal-title-group") != null ? pubmedArt.getChild("front").getChild("journal-meta").
+                                    getChild("journal-title-group").getChild("journal-title") : null;
                             if (magazine != null) {
                                 r.append(". ");
                                 r.append(magazine.getValue());
@@ -1478,6 +1524,7 @@ public class ESearchImpl {
                                         r.append(".");
                                     }
                                 } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
                             }
                             elem = new Element("reference");
@@ -1489,6 +1536,8 @@ public class ESearchImpl {
                         System.out.println("Articulos en XML PMC: " + articulosEnXML);
                         System.out.println("Excluidos con rank cero: " + rankCero);
                     } catch (Exception jde) {
+                            jde.printStackTrace();
+                        System.out.println("Ha ocurrido un error mientras se obtiene informacion de PMC: " + jde);
                         throw new NoDataException("Ha ocurrido un error mientras se obtiene informacion de PMC");
                     }
                 } // if efetch
@@ -1550,6 +1599,7 @@ public class ESearchImpl {
             doc = getXML(in);
         } catch (JDOMException jde) {
             doc = null;
+            jde.printStackTrace();
         } finally {
             conex.disconnect();
         }
@@ -1568,6 +1618,7 @@ public class ESearchImpl {
                     }
                 }
             } catch (JDOMException jde) {
+                jde.printStackTrace();
             }
         } 
         return isValid;

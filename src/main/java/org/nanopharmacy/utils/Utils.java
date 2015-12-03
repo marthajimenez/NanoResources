@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.ProtocolException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import org.jdom.Document;
@@ -16,6 +17,9 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.nanopharmacy.eutility.impl.ESearchImpl;
+import org.nanopharmacy.eutility.impl.NoDataException;
+import org.nanopharmacy.eutility.impl.UseHistoryException;
 //import org.nanopharmacy.utils.Utils.BD;
 import org.semanticwb.datamanager.DataList;
 import org.semanticwb.datamanager.DataMgr;
@@ -755,7 +759,65 @@ public class Utils {
                 }
             }
         }
+
+        public static JSONObject getPublication(int artYearsOld, String gene, String altMolecular, String id) throws NoDataException, UseHistoryException, ProtocolException, IOException, InterruptedException {
+            ESearchImpl esearch = new ESearchImpl();
+            JSONObject obj = new JSONObject();
+            int monthInc = 6;
+            int months = artYearsOld * 12;
+            int tmpNotification = 0;
+            int tmpRecommended = 0;
+            for (int m = 0; m < months; m += monthInc) {
+                JSONObject dataArt = esearch.getPublicationsInfo(gene, altMolecular, 0, 0, m, m + monthInc);//
+                if (dataArt != null) {
+                    /*  Iterator<String> it = dataArt.keys();
+                     while (it.hasNext()) {
+                     String next = it.next();
+                     System.out.println("next " + next);
+                     }*/
+                    //var jsonArt = JSON.parse(dataArt);
+
+                    if (dataArt.has("error")) {
+                        SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+                        SWBDataSource ds = engine.getDataSource("Search");
+                        ds.removeObjById(id);
+                        obj = dataArt;
+                        //print("En error!!!" + jsonArt.error.error)
+                     /*this.getDataSource("Search").removeObjById(response.data._id);
+                         response.status = -2;
+                    
+                    
+                         if ("COMMUNICATION_PROBLEM".equals(jsonArt.error.error)) {
+                         response.msgError = "A communications error happened, please try again later";
+                         } else if ("NO_INFO_FOUND".equals(jsonArt.error.error)) {
+                         response.msgError = "No information was found for your search scheme";
+                         } else if ("EXECUTION_ERROR".equals(jsonArt.error.error)) {
+                         response.msgError = "An execution error happened while gathering information for your search scheme";
+                         }
+                         break;*/ //
+                    } else if (dataArt.has("outstanding")) {
+                        //var utils = Java.type("org.nanopharmacy.utils.Utils.ENG");
+                        String res = saveNewArticles(dataArt, id, tmpNotification, tmpRecommended);
+                        String[] temp = res.split(",");
+                        if (temp.length == 2) {
+                            tmpNotification = Integer.parseInt(temp[0]);
+                            tmpRecommended = Integer.parseInt(temp[1]);
+
+                            //print("--------------Nuevos: " + tmpNotification + ", Recomendados: " + tmpRecommended);
+                        }
+                    }
+                    dataArt = null;
+                }
+
+            }
+            obj.put("recommended", tmpRecommended);
+            obj.put("notification", tmpNotification);
+            return obj;
+//            return tmpNotification + "" + tmpRecommended;
+        }
+
     }
+
     /**
      * <p>
      * Provee funciones para la manipulaci&oacute;n de cadenas de texto tal como
