@@ -1517,7 +1517,7 @@ public class ESearchImpl {
                             if (month != null) {
                                 try {
                                     r.append(". ");
-                                    r.append(Utils.Months[Integer.parseInt(month)]);
+                                    r.append(Utils.Months[Integer.parseInt(month)-1]);
                                     if (day != null) {
                                         r.append(" ");
                                         r.append(day);

@@ -156,7 +156,7 @@ public class Utils {
                 String[] namesInt, int[] valuesInt)
                 throws IOException {
             boolean valid = false;
-            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource(titleDataSource);
 
             /*DataObject query = new DataObject();
@@ -202,7 +202,7 @@ public class Utils {
          */
         public static String getIdProperty(String dataSource, String property, String valueProp) throws IOException {
             String ret = null;
-            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource(dataSource);
             DataObject obj = getDataProperty(ds, property, valueProp, 0);
             if (obj != null) {
@@ -311,7 +311,7 @@ public class Utils {
          * respuesta
          */
         public static String saveNewArticles(JSONObject publications, String idSearch, int countNewArt, int countRecommended) throws IOException, InterruptedException {
-            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
             SWBDataSource dsSearch = engine.getDataSource("Search");
             SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
@@ -413,7 +413,7 @@ public class Utils {
          * respuesta
          */
         public static void saveUpdateArticles(JSONObject publications, String idSearch) throws IOException, InterruptedException {
-            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
             SWBDataSource dsSearch = engine.getDataSource("Search");
             SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
@@ -623,7 +623,7 @@ public class Utils {
          * respuesta
          */
         public static void setNewDisease(JSONArray arrayDiseases, String idGene) throws IOException, InterruptedException {
-            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("CancerType");
             SWBDataSource dsGeneCancer = engine.getDataSource("Gene_Cancer");
 
@@ -684,7 +684,7 @@ public class Utils {
          * respuesta
          */
         public static void setUpdateDisease(JSONArray arrayDiseases, String idGene) throws IOException, InterruptedException {
-            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("CancerType");
             SWBDataSource dsGeneCancer = engine.getDataSource("Gene_Cancer");
 
@@ -778,7 +778,7 @@ public class Utils {
                     //var jsonArt = JSON.parse(dataArt);
 
                     if (dataArt.has("error")) {
-                        SWBScriptEngine engine = DataMgr.getUserScriptEngine("/test/NanoSources.js", null, false);
+                        SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
                         SWBDataSource ds = engine.getDataSource("Search");
                         ds.removeObjById(id);
                         obj = dataArt;
