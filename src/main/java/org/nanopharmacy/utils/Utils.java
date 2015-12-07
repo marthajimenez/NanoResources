@@ -159,21 +159,6 @@ public class Utils {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource(titleDataSource);
 
-            /*DataObject query = new DataObject();
-             DataObject data = new DataObject();
-             query.put("data", data);
-             if (namesString != null) {
-             for (int i = 0; i < namesString.length; i++) {
-             data.put(namesString[i], values[i]);
-             }
-             }
-             if (namesInt != null) {
-             for (int i = 0; i < namesInt.length; i++) {
-             data.put(namesInt[i], valuesInt[i]);
-             }
-             }
-
-             DataObject obj = ds.fetch(query);*/
             DataObject obj = getDataProperty(ds, namesString, values, namesInt, valuesInt);
 
             int i = obj.getDataObject("response").getInt("totalRows");
@@ -306,11 +291,19 @@ public class Utils {
          * ser&aacute;n guardadas para la b&uacute;squeda
          * @param idSearch identificador de la b&uacute;squeda que ser&aacute;
          * almacenada.
+         * @param countNewArt Numero de articulos nuevos
+         * @param countRecommended Numero de articulos recomendados
+         * @return String concatenado con el n&uacute;mero de art&iacute;culos
+         * nuevos y recomendados
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
+         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
+         * ya sea antes o durante la actividad.
          */
-        public static String saveNewArticles(JSONObject publications, String idSearch, int countNewArt, int countRecommended) throws IOException, InterruptedException {
+        public static String saveNewArticles(JSONObject publications, String idSearch, int countNewArt, int countRecommended) 
+                throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
             SWBDataSource dsSearch = engine.getDataSource("Search");
@@ -411,6 +404,9 @@ public class Utils {
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
+         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
+         * ya sea antes o durante la actividad.
          */
         public static void saveUpdateArticles(JSONObject publications, String idSearch) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
@@ -479,39 +475,6 @@ public class Utils {
                             countRecommended++;
                         }
                     }
-                    /*//Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con la siguiente enfermedad 
-                     DataObject obj1 = getDataProperty(dsArtSearch, "article", idArticle, 0);
-                     rows = obj1.getDataObject("response").getInt("totalRows");
-                     int datRanking = 0, datStatus = 0;
-                     boolean isValid = true;
-
-                     if (rows > 0) {
-                     DataList list = obj1.getDataObject("response").getDataList("data");
-                     for (int j = 0; j < list.size(); j++) {
-                     DataObject articleList = list.getDataObject(j);
-                     if (articleList.getString("search") != null && articleList.getString("search").equals(idSearch)) {
-                     if (articleList.containsKey("ranking")) {
-                     datRanking = articleList.getInt("ranking");
-                     }
-                     if (articleList.containsKey("status")) {
-                     datStatus = articleList.getInt("status");
-                     }
-                     isValid = false;
-                     break;
-                     }
-                     }
-
-                     if (datStatus == 1) {
-                     countNewArt++;
-                     }
-                     if (datRanking > 5) {
-                     countRecommended++;
-                     }
-                     }
-                     //Compara que el articulo y la busqueda sean el mismo registro
-                     if (!isValid) {
-                     continue;
-                     }*/
                     art = null;
                 }
                 //almacena la asociación entre una búsqueda y un artículo
@@ -522,16 +485,12 @@ public class Utils {
                 newArtSearch.put("status", status);
                 dsArtSearch.addObj(newArtSearch);
 
-                /*if (ranking > 5) {
-                 countRecommended++;
-                 }*/
             }
             arrOutstanding = null;
             //asigna el número de artículos nuevos y recomendados
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
             dsSearch.updateObj(datObjSearch);
-            //return countNewArt + "," + countRecommended;
         }
 
         /**
@@ -548,14 +507,16 @@ public class Utils {
          * BD de pmc
          * @return un DataObject que contiene la informaci&oacute;n del nuevo
          * art&iacute;culo almacenado en la BD de la aplicaci&oacute;n
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
+         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
+         * ya sea antes o durante la actividad.
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
          */
-        private static DataObject setPropArticle(SWBDataSource ds, JSONObject art,
-                int pmid, int pmc) throws IOException, InterruptedException {
+        private static DataObject setPropArticle(SWBDataSource ds, JSONObject art, int pmid, int pmc)
+                throws IOException, InterruptedException {
             DataObject newArticle = new DataObject();
-            DataObject dataNewArticle = new DataObject();
             if (pmid != 0) {
                 newArticle.put("pmid", pmid);
             }
@@ -606,7 +567,7 @@ public class Utils {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());
             newArticle.put("lastUpdate", date);
-            dataNewArticle = ds.addObj(newArticle);
+            DataObject dataNewArticle = ds.addObj(newArticle);
             return dataNewArticle;
         }
 
@@ -621,6 +582,9 @@ public class Utils {
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
+         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
+         * ya sea antes o durante la actividad.
          */
         public static void setNewDisease(JSONArray arrayDiseases, String idGene) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
@@ -682,6 +646,9 @@ public class Utils {
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
+         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
+         * ya sea antes o durante la actividad.
          */
         public static void setUpdateDisease(JSONArray arrayDiseases, String idGene) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
@@ -731,25 +698,6 @@ public class Utils {
                         if (rows > 0) {
                             continue;
                         }
-                        /*DataObject obj1 = getDataProperty(dsGeneCancer, "cancer", idDisease, 0);
-                         rows = obj1.getDataObject("response").getInt("totalRows");
-                         boolean isValid = true;
-
-                         if (rows > 0) {
-                         DataList list = obj1.getDataObject("response").getDataList("data");
-                         for (int j = 0; j < list.size(); j++) {
-                         DataObject cancerList = list.getDataObject(j);
-                         //Recorre 
-                         if (cancerList.getString("gene") != null && cancerList.getString("gene").equals(idGene)) {
-                         isValid = false;
-                         break;
-                         }
-                         }
-                         }
-                         //Compara que el cancer y gen sean el mismo registro
-                         if (!isValid) {
-                         continue;
-                         }*/
                     }
                     //Agrega la relación del gen y cancer la BD
                     DataObject newGeneCancer = new DataObject();
@@ -760,7 +708,36 @@ public class Utils {
             }
         }
 
-        public static JSONObject getPublication(int artYearsOld, String gene, String altMolecular, String id) throws NoDataException, UseHistoryException, ProtocolException, IOException, InterruptedException {
+        /**
+         * Asocia a una b&uacute;squeda, un conjunto de art&iacute;culos extra&iacute;dos 
+         * de una BD externa. Los art&iacute;culos est&aacute;n relacionados a un gen, 
+         * una alteraci&oacute;n molecular y un n&uacute;mero de años en 
+         * espec&iacute;fico
+         * @param artYearsOld N&uacute;mero de años que ser&aacute; utilizado para la 
+         * b&uacute;squeda de art&iacute;culos.
+         * @param gene S&iacute;mbolo del gen que ser&aacute; utilizado para la 
+         * b&uacute;squeda de art&iacute;culos.
+         * @param altMolecular Nombre de la alteraci&oacute;n molecular que ser&aacute; 
+         * utilizada para la b&uacute;squeda de art&iacute;culos.
+         * @param id Identificador de la b&uacute;squeda a la que ser&aacute;n 
+         * asociados los art&iacute;culos.
+         * @return Un arreglo JSON con el n&uacute;mero de elementos nuevos y 
+         * recomendados; o un error si hubo un problema al almacenar la informaci&oacute;n.
+         * @throws NoDataException Indica condiciones para las que no se reciben
+         * resultados de un repositorio de datos a una BD externa.
+         * @throws UseHistoryException Indica condiciones para las no se logran 
+         * interpretar los valores clave de consulta a BD externa
+         * @throws ProtocolException Indica que hay un error en el protocolo 
+         * subyacente, como un error de TCP.
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
+         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
+         * ya sea antes o durante la actividad.
+         */
+        public static JSONObject getPublication(int artYearsOld, String gene, String altMolecular, String id) 
+                throws NoDataException, UseHistoryException, ProtocolException, IOException, InterruptedException {
             ESearchImpl esearch = new ESearchImpl();
             JSONObject obj = new JSONObject();
             int monthInc = 6;
@@ -768,52 +745,28 @@ public class Utils {
             int tmpNotification = 0;
             int tmpRecommended = 0;
             for (int m = 0; m < months; m += monthInc) {
-                JSONObject dataArt = esearch.getPublicationsInfo(gene, altMolecular, 0, 0, m, m + monthInc);//
+                JSONObject dataArt = esearch.getPublicationsInfo(gene, altMolecular, 0, 0, m, m + monthInc);
                 if (dataArt != null) {
-                    /*  Iterator<String> it = dataArt.keys();
-                     while (it.hasNext()) {
-                     String next = it.next();
-                     System.out.println("next " + next);
-                     }*/
-                    //var jsonArt = JSON.parse(dataArt);
 
                     if (dataArt.has("error")) {
                         SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
                         SWBDataSource ds = engine.getDataSource("Search");
                         ds.removeObjById(id);
                         obj = dataArt;
-                        //print("En error!!!" + jsonArt.error.error)
-                     /*this.getDataSource("Search").removeObjById(response.data._id);
-                         response.status = -2;
-                    
-                    
-                         if ("COMMUNICATION_PROBLEM".equals(jsonArt.error.error)) {
-                         response.msgError = "A communications error happened, please try again later";
-                         } else if ("NO_INFO_FOUND".equals(jsonArt.error.error)) {
-                         response.msgError = "No information was found for your search scheme";
-                         } else if ("EXECUTION_ERROR".equals(jsonArt.error.error)) {
-                         response.msgError = "An execution error happened while gathering information for your search scheme";
-                         }
-                         break;*/ //
                     } else if (dataArt.has("outstanding")) {
-                        //var utils = Java.type("org.nanopharmacy.utils.Utils.ENG");
                         String res = saveNewArticles(dataArt, id, tmpNotification, tmpRecommended);
                         String[] temp = res.split(",");
                         if (temp.length == 2) {
                             tmpNotification = Integer.parseInt(temp[0]);
                             tmpRecommended = Integer.parseInt(temp[1]);
-
-                            //print("--------------Nuevos: " + tmpNotification + ", Recomendados: " + tmpRecommended);
                         }
                     }
                     dataArt = null;
                 }
-
             }
             obj.put("recommended", tmpRecommended);
             obj.put("notification", tmpNotification);
             return obj;
-//            return tmpNotification + "" + tmpRecommended;
         }
 
     }
@@ -848,12 +801,10 @@ public class Utils {
                 InterruptedException {
 
             String ret = null;
-            //String summ=null;
             if (txt != null) {
                 HTMLParser parser = new HTMLParser(new StringReader(txt));
                 ret = parser.getText();
             }
-            //System.out.println("txt:"+ret);
             return ret;
         }
 
@@ -870,7 +821,6 @@ public class Utils {
             txt = txt.replaceAll('\u0022' + "", "&quot;");
             txt = txt.replaceAll('\u201c' + "", "&quot;");
             txt = txt.replaceAll('\u201d' + "", "&quot;");
-            //txt = txt.replaceAll('\u201e' +"", "\\\"");
             txt = txt.replaceAll('\u201f' + "", "&quot;");
             txt = txt.replaceAll('\u275d' + "", "&quot;");
             txt = txt.replaceAll('\u275e' + "", "&quot;");
