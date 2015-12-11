@@ -19,7 +19,7 @@ public class Test {
         ESearchImpl search = new ESearchImpl();
         try {
             System.out.println("Ejecutando...");
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 3; i++) {
                 JSONObject resp = search.getPublicationsInfo("AKT1", "c.49G>A", 0, 0, (short) (i * 12), (short) ((i + 1) * 12));
                 if (resp.has("outstanding")) {
                     System.out.println("Para almacenar: " + resp.getJSONArray("outstanding").length());
