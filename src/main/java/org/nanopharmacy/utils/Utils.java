@@ -298,11 +298,11 @@ public class Utils {
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
-         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
-         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
-         * ya sea antes o durante la actividad.
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo
+         * est&aacute; esperando, para dormir, o de lo contrario ocupada, y el
+         * hilo se interrumpe, ya sea antes o durante la actividad.
          */
-        public static String saveNewArticles(JSONObject publications, String idSearch, int countNewArt, int countRecommended) 
+        public static String saveNewArticles(JSONObject publications, String idSearch, int countNewArt, int countRecommended)
                 throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Article");
@@ -404,9 +404,9 @@ public class Utils {
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
-         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
-         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
-         * ya sea antes o durante la actividad.
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo
+         * est&aacute; esperando, para dormir, o de lo contrario ocupada, y el
+         * hilo se interrumpe, ya sea antes o durante la actividad.
          */
         public static void saveUpdateArticles(JSONObject publications, String idSearch) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
@@ -507,9 +507,9 @@ public class Utils {
          * BD de pmc
          * @return un DataObject que contiene la informaci&oacute;n del nuevo
          * art&iacute;culo almacenado en la BD de la aplicaci&oacute;n
-         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
-         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
-         * ya sea antes o durante la actividad.
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo
+         * est&aacute; esperando, para dormir, o de lo contrario ocupada, y el
+         * hilo se interrumpe, ya sea antes o durante la actividad.
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
@@ -582,9 +582,9 @@ public class Utils {
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
-         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
-         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
-         * ya sea antes o durante la actividad.
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo
+         * est&aacute; esperando, para dormir, o de lo contrario ocupada, y el
+         * hilo se interrumpe, ya sea antes o durante la actividad.
          */
         public static void setNewDisease(JSONArray arrayDiseases, String idGene) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
@@ -646,9 +646,9 @@ public class Utils {
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
-         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
-         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
-         * ya sea antes o durante la actividad.
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo
+         * est&aacute; esperando, para dormir, o de lo contrario ocupada, y el
+         * hilo se interrumpe, ya sea antes o durante la actividad.
          */
         public static void setUpdateDisease(JSONArray arrayDiseases, String idGene) throws IOException, InterruptedException {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
@@ -706,37 +706,40 @@ public class Utils {
                     dsGeneCancer.addObj(newGeneCancer);
                 }
             }
+
         }
 
         /**
-         * Asocia a una b&uacute;squeda, un conjunto de art&iacute;culos extra&iacute;dos 
-         * de una BD externa. Los art&iacute;culos est&aacute;n relacionados a un gen, 
-         * una alteraci&oacute;n molecular y un n&uacute;mero de años en 
-         * espec&iacute;fico
-         * @param artYearsOld N&uacute;mero de años que ser&aacute; utilizado para la 
+         * Asocia a una b&uacute;squeda, un conjunto de art&iacute;culos
+         * extra&iacute;dos de una BD externa. Los art&iacute;culos est&aacute;n
+         * relacionados a un gen, una alteraci&oacute;n molecular y un
+         * n&uacute;mero de años en espec&iacute;fico
+         *
+         * @param artYearsOld N&uacute;mero de años que ser&aacute; utilizado
+         * para la b&uacute;squeda de art&iacute;culos.
+         * @param gene S&iacute;mbolo del gen que ser&aacute; utilizado para la
          * b&uacute;squeda de art&iacute;culos.
-         * @param gene S&iacute;mbolo del gen que ser&aacute; utilizado para la 
-         * b&uacute;squeda de art&iacute;culos.
-         * @param altMolecular Nombre de la alteraci&oacute;n molecular que ser&aacute; 
-         * utilizada para la b&uacute;squeda de art&iacute;culos.
-         * @param id Identificador de la b&uacute;squeda a la que ser&aacute;n 
+         * @param altMolecular Nombre de la alteraci&oacute;n molecular que
+         * ser&aacute; utilizada para la b&uacute;squeda de art&iacute;culos.
+         * @param id Identificador de la b&uacute;squeda a la que ser&aacute;n
          * asociados los art&iacute;culos.
-         * @return Un arreglo JSON con el n&uacute;mero de elementos nuevos y 
-         * recomendados; o un error si hubo un problema al almacenar la informaci&oacute;n.
+         * @return Un arreglo JSON con el n&uacute;mero de elementos nuevos y
+         * recomendados; o un error si hubo un problema al almacenar la
+         * informaci&oacute;n.
          * @throws NoDataException Indica condiciones para las que no se reciben
          * resultados de un repositorio de datos a una BD externa.
-         * @throws UseHistoryException Indica condiciones para las no se logran 
+         * @throws UseHistoryException Indica condiciones para las no se logran
          * interpretar los valores clave de consulta a BD externa
-         * @throws ProtocolException Indica que hay un error en el protocolo 
+         * @throws ProtocolException Indica que hay un error en el protocolo
          * subyacente, como un error de TCP.
          * @throws IOException si durante la ejecuci&oacute;n ocurre
          * alg&uacute;n problema con la generaci&oacute;n o escritura de la
          * respuesta
-         * @throws java.lang.InterruptedException Se lanza cuando un hilo est&aacute;
-         * esperando, para dormir, o de lo contrario ocupada, y el hilo se interrumpe, 
-         * ya sea antes o durante la actividad.
+         * @throws java.lang.InterruptedException Se lanza cuando un hilo
+         * est&aacute; esperando, para dormir, o de lo contrario ocupada, y el
+         * hilo se interrumpe, ya sea antes o durante la actividad.
          */
-        public static JSONObject getPublication(int artYearsOld, String gene, String altMolecular, String id) 
+        public static JSONObject getPublication(int artYearsOld, String gene, String altMolecular, String id)
                 throws NoDataException, UseHistoryException, ProtocolException, IOException, InterruptedException {
             ESearchImpl esearch = new ESearchImpl();
             JSONObject obj = new JSONObject();
@@ -769,6 +772,59 @@ public class Utils {
             return obj;
         }
 
+        /**
+         * Valida que exista un &uacute;nico tipo de alteraci&oacute;n molecular 
+         * para un gen.
+         * 
+         * @param idGen identificador del gen a validar
+         * @param nameAltMol nombre de la alteraci&oacute;n molecular a validar
+         * @return {@code boolean} que representa si existe o no el registro con
+         * los par&aacute;metros proporcionados
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
+        public static boolean isValidAltMol(String idGen, String nameAltMol) throws IOException {
+            boolean isValid = false;
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
+            SWBDataSource dsAlterationMolecular = engine.getDataSource("AlterationMolecular");
+            String[] propertiesName = {"gene", "name"};
+            String[] propertiesValues = {idGen, nameAltMol};
+            DataObject obj = getDataProperty(dsAlterationMolecular, propertiesName, propertiesValues, null, null);
+            int i = obj.getDataObject("response").getInt("totalRows");
+            if (i == 0) {
+                isValid = true;
+            }
+            return isValid;
+        }
+
+        /**
+         * Valida que exista un &uacute;nico tipo de c&aacute;ncer para un gen.
+         * 
+         * @param idGen identificador del gen a validar
+         * @param nameDisease nombre del tipo de c&aacute;ncer a validar
+         * @return {@code boolean} que representa si existe o no el registro con
+         * los par&aacute;metros proporcionados
+         * @throws IOException si durante la ejecuci&oacute;n ocurre
+         * alg&uacute;n problema con la generaci&oacute;n o escritura de la
+         * respuesta
+         */
+        public static boolean isValidCancerType(String idGen, String nameDisease) throws IOException {
+            boolean isValid = false;
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
+            SWBDataSource dsGeneCancerType = engine.getDataSource("Gene_Cancer");
+            String idCancerType = getIdProperty("CancerType", "name", nameDisease);
+            if (idCancerType != null) {
+                String[] propertiesName = {"gene", "cancer"};
+                String[] propertiesValues = {idGen, idCancerType};
+                DataObject obj = getDataProperty(dsGeneCancerType, propertiesName, propertiesValues, null, null);
+                int i = obj.getDataObject("response").getInt("totalRows");
+                if (i == 0) {
+                    isValid = true;
+                }
+            }
+            return isValid;
+        }
     }
 
     /**
