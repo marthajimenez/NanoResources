@@ -12,6 +12,8 @@ import java.io.StringReader;
 import java.net.ProtocolException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jdom.Document;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
@@ -773,9 +775,9 @@ public class Utils {
         }
 
         /**
-         * Valida que exista un &uacute;nico tipo de alteraci&oacute;n molecular 
+         * Valida que exista un &uacute;nico tipo de alteraci&oacute;n molecular
          * para un gen.
-         * 
+         *
          * @param idGen identificador del gen a validar
          * @param nameAltMol nombre de la alteraci&oacute;n molecular a validar
          * @return {@code boolean} que representa si existe o no el registro con
@@ -800,7 +802,7 @@ public class Utils {
 
         /**
          * Valida que exista un &uacute;nico tipo de c&aacute;ncer para un gen.
-         * 
+         *
          * @param idGen identificador del gen a validar
          * @param nameDisease nombre del tipo de c&aacute;ncer a validar
          * @return {@code boolean} que representa si existe o no el registro con
@@ -824,6 +826,46 @@ public class Utils {
                 }
             }
             return isValid;
+        }
+
+        public static int removeSchemeData(String schemeId) {
+            try {
+                System.out.println("Borrando Java");
+                System.out.println(schemeId);
+                SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/dist/NanoSources.js", null, false);
+                SWBDataSource dataSource;
+                DataObject obj;
+                dataSource = engine.getDataSource("Art_Search");
+                obj = getDataProperty(dataSource, "search", schemeId, 0);
+                if (obj != null) {
+                    int rows = obj.getDataObject("response").getInt("totalRows");
+                    if (rows != 0) {
+                        DataList list = obj.getDataObject("response").getDataList("data");
+                        for (int j = 0; j < list.size(); j++) {
+                            DataObject genList = list.getDataObject(j);
+                            dataSource.removeObjById(genList.getString("_id"));
+                        }
+
+                    }
+                }
+                dataSource = engine.getDataSource("Report");
+                obj = getDataProperty(dataSource, "search", schemeId, 0);
+                if (obj != null) {
+                    int rows = obj.getDataObject("response").getInt("totalRows");
+                    if (rows != 0) {
+                        DataList list = obj.getDataObject("response").getDataList("data");
+                        for (int j = 0; j < list.size(); j++) {
+                            DataObject genList = list.getDataObject(j);
+                            dataSource.removeObjById(genList.getString("_id"));
+                        }
+                    }
+                }
+
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return 0;
         }
     }
 
