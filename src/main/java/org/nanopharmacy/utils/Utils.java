@@ -810,7 +810,7 @@ public class Utils {
          * respuesta
          */
         public static boolean isValidCancerType(String idGen, String nameDisease) throws IOException {
-            boolean isValid = false;
+            boolean isValid = true;
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource dsGeneCancerType = engine.getDataSource("Gene_Cancer");
             String idCancerType = getIdProperty("CancerType", "name", nameDisease);
@@ -819,8 +819,8 @@ public class Utils {
                 String[] propertiesValues = {idGen, idCancerType};
                 DataObject obj = getDataProperty(dsGeneCancerType, propertiesName, propertiesValues, null, null);
                 int i = obj.getDataObject("response").getInt("totalRows");
-                if (i == 0) {
-                    isValid = true;
+                if (i != 0) {
+                    isValid = false;
                 }
             }
             return isValid;
