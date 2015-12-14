@@ -269,9 +269,9 @@ public class ESearchImpl {
                 docSum = null;
                 errorHappened = true;
             } else {
+                Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, nde);
                 throw nde;
             }
-            Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, nde);
         }
         
         if (docSum != null) {
@@ -355,10 +355,18 @@ public class ESearchImpl {
             spec = spec.replaceFirst(Token_QryKEY, qryKey);
             spec = spec.replaceFirst(Token_WebENV, webEnv);
             doc = this.getExternalData(spec);
+            boolean validResponse = false;
+            Element summarySet = null;
 
             if (doc != null) {
                 respRoot = doc.getRootElement();
-                List<Element> summaries = respRoot.getChild("DocumentSummarySet").getChildren(ESearchImpl.Elem_DocSummary);
+                summarySet = respRoot.getChild("DocumentSummarySet");
+                if (summarySet != null) {
+                    validResponse = true;
+                }
+            } // if esummary
+            if (validResponse) {
+                List<Element> summaries = summarySet.getChildren(ESearchImpl.Elem_DocSummary);
                 for (Element summary : summaries) {
                     if (summary.getChildText(ESearchImpl.Elem_NAME).equalsIgnoreCase(geneName) &&
                             summary.getChild(ESearchImpl.Elem_ORGANISM).getChildText(ESearchImpl.Elem_SciNAME).
@@ -366,10 +374,11 @@ public class ESearchImpl {
                         res = summary;
                     }
                 }
-                if (res == null) {
-                    throw new NoDataException("NO_GENE_INFO_FOUND");
+            } else {
+                if (respRoot.getChild("ERROR") != null && respRoot.getChildText("ERROR").contains("Empty result")) {
+                    throw new NoDataException(ESearchImpl.ERROR_INFO_NOT_FOUND);
                 }
-            } // if esummary
+            }
         } // if esearch
         return res;
     }
