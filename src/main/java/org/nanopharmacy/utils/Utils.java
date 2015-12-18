@@ -391,6 +391,9 @@ public class Utils {
             //asigna el número de artículos nuevos
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String date = sdf.format(new Date());
+            datObjSearch.put("lastUpdate", date);
             dsSearch.updateObj(datObjSearch);
             return countNewArt + "," + countRecommended;
         }
@@ -492,6 +495,9 @@ public class Utils {
             //asigna el número de artículos nuevos y recomendados
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String date = sdf.format(new Date());
+            datObjSearch.put("lastUpdate", date);
             dsSearch.updateObj(datObjSearch);
         }
 
