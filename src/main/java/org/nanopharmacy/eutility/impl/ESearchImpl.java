@@ -755,7 +755,8 @@ public class ESearchImpl {
                             article.put("url", pubmedArt.getChildText("url"));
                             article.put("author", pubmedArt.getChildText("author"));
                             article.put("reference", pubmedArt.getChildText("reference"));
-
+                            article.put("publicationYear", pubmedArt.getChildText("publicationYear"));
+                            article.put("publicationMonth", pubmedArt.getChildText("publicationMonth"));
                             outstanding.put(article);
         //                } else {
         //                    article = new JSONObject();
@@ -946,6 +947,8 @@ public class ESearchImpl {
                         int globalRank = 0;
                         String articleTite = null;
                         String author = null;
+                        String pubYear = null;
+                        String pubMonth = null;
                         Element articleNode = pubmedArt.getChild("MedlineCitation").getChild("Article");
 
                         if (articleNode.getChild("Abstract") == null) {
@@ -1031,16 +1034,18 @@ public class ESearchImpl {
                         }
                         //Referencia al articulo
                         elem = articleNode.getChild("Journal").getChild("JournalIssue");
-                        r.append("(").append(elem.getChild("PubDate").getChildText("Year")).append("). ");
+                        pubYear = elem.getChild("PubDate").getChildText("Year");
+                        pubMonth = elem.getChild("PubDate").getChildText("Month");
+                        r.append("(").append(pubYear).append("). ");
                         r.append(articleTite);
                         r.append(" ");
                         r.append(elem.getParentElement().getChildText("Title")); //titulo de revista
                         r.append(". ISSN:").append(elem.getParentElement().getChildText("ISSN"));
                         r.append(". vol.").append(elem.getChildText("Volume"));
                         r.append(". issue ").append(elem.getChildText("Issue")).append(". ");
-                        r.append(elem.getChild("PubDate").getChildText("Month") == null
+                        r.append(pubMonth == null
                                 ? ""
-                                : " " + elem.getChild("PubDate").getChildText("Month"));
+                                : " " + pubMonth);
                         r.append(elem.getChild("PubDate").getChildText("Day") == null
                                 ? ""
                                 : " " + elem.getChild("PubDate").getChildText("Day"));
@@ -1048,8 +1053,26 @@ public class ESearchImpl {
                         elem = new Element("reference");
                         elem.setText(r.toString());
                         art.addContent(elem);
-
+                        elem = null;
+                        elem = new Element("publicationYear");
+                        elem.setText(pubYear);
+                        art.addContent(elem);
+                        elem = null;
+                        elem = new Element("publicationMonth");
+                        if (pubMonth != null) {
+                            for (int i = 0; i < Utils.Months.length; i++) {
+                                String monthName = Utils.Months[i];
+                                if (monthName.equals(pubMonth)) {
+                                    pubMonth = Integer.toString(i + 1);
+                                    break;
+                                }
+                            }
+                        }
+                        elem.setText(pubMonth != null ? pubMonth : "");
+                        art.addContent(elem);
                         root.addContent(art);
+                        pubYear = null;
+                        pubMonth = null;
                     }
                     System.out.println("*** Sin abstract: " + sinAbstract);
                     System.out.println("Con rank igual a cero: " + rankCero);
@@ -1309,8 +1332,8 @@ public class ESearchImpl {
                                 if (year != null) {
                                     r.append("(").append(year).append("). ");
                                 }
-
-                                //título y revista de la referencia
+                                
+                                //titulo y revista de la referencia
                                 r.append(articleMetaNode.getChild("title-group").getChild("article-title").getValue());
 
                                 Element magazine = articleMetaNode.getChild("journal-title-group") != null
@@ -1363,7 +1386,15 @@ public class ESearchImpl {
                                 elem = new Element("reference");
                                 elem.setText(r.toString());
                                 art.addContent(elem);
-
+                                elem = null;
+                                elem = new Element("publicationYear");
+                                elem.setText(year);
+                                art.addContent(elem);
+                                elem = null;
+                                elem = new Element("publicationMonth");
+                                elem.setText(month != null ? month : "");
+                                art.addContent(elem);
+                                elem = null;
                                 root.addContent(art);
                             } catch (Exception e) {
                                 Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, e);
