@@ -11,6 +11,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.ProtocolException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -525,6 +526,8 @@ public class Utils {
         private static DataObject setPropArticle(SWBDataSource ds, JSONObject art, int pmid, int pmc)
                 throws IOException, InterruptedException {
             DataObject newArticle = new DataObject();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            
             if (pmid != 0) {
                 newArticle.put("pmid", pmid);
             }
@@ -545,6 +548,15 @@ public class Utils {
                 newArticle.put("autor", art.getString("author"));
                 newArticle.put("autorSort", art.getString("author").toLowerCase());
             }
+            newArticle.put("publicationYear",art.has("publicationYear") && 
+                    !art.getString("publicationYear").equalsIgnoreCase("") ? 
+                    Integer.parseInt(art.getString("publicationYear")) 
+                    : Calendar.getInstance().get(Calendar.YEAR));
+            
+             newArticle.put("publicationMonth",art.has("publicationMonth") && 
+                    !art.getString("publicationMonth").equalsIgnoreCase("") ? 
+                    Integer.parseInt(art.getString("publicationMonth")) 
+                    : 1);
 
             StringBuilder sbf = new StringBuilder();
             JSONArray abstractTxt = art.getJSONArray("abstract");
@@ -572,7 +584,6 @@ public class Utils {
             if (sbf.length() > 0) {
                 newArticle.put("abstract", sbf.toString());//TEXT.parseTextJson(TEXT.parseHTML(sbf.toString()))
             }
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());
             newArticle.put("lastUpdate", date);
             DataObject dataNewArticle = ds.addObj(newArticle);
