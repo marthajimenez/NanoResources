@@ -527,7 +527,7 @@ public class Utils {
                 throws IOException, InterruptedException {
             DataObject newArticle = new DataObject();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            
+
             if (pmid != 0) {
                 newArticle.put("pmid", pmid);
             }
@@ -548,15 +548,18 @@ public class Utils {
                 newArticle.put("autor", art.getString("author"));
                 newArticle.put("autorSort", art.getString("author").toLowerCase());
             }
-            newArticle.put("publicationYear",art.has("publicationYear") && 
-                    !art.getString("publicationYear").equalsIgnoreCase("") ? 
-                    Integer.parseInt(art.getString("publicationYear")) 
-                    : Calendar.getInstance().get(Calendar.YEAR));
-            
-             newArticle.put("publicationMonth",art.has("publicationMonth") && 
-                    !art.getString("publicationMonth").equalsIgnoreCase("") ? 
-                    Integer.parseInt(art.getString("publicationMonth")) 
-                    : 1);
+            newArticle.put("publicationYear", art.has("publicationYear")
+                    && !art.getString("publicationYear").equalsIgnoreCase("")
+                            ? Integer.parseInt(art.getString("publicationYear"))
+                            : Calendar.getInstance().get(Calendar.YEAR));
+            int month = 1;
+            if (art.has("publicationMonth") && !art.getString("publicationMonth").equalsIgnoreCase("")) {
+                try {
+                    month = Integer.parseInt(art.getString("publicationMonth"));
+                } catch (NumberFormatException ex) {
+                }
+            }
+            newArticle.put("publicationMonth", month);
 
             StringBuilder sbf = new StringBuilder();
             JSONArray abstractTxt = art.getJSONArray("abstract");
@@ -844,12 +847,12 @@ public class Utils {
             }
             return isValid;
         }
-        
-        public  static void removeUserData(String userId) {
+
+        public static void removeUserData(String userId) {
             try {
                 SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/dist/NanoSources.js", null, false);
                 SWBDataSource dataSource;
-                DataObject obj; 
+                DataObject obj;
                 dataSource = engine.getDataSource("Search");
                 obj = getDataProperty(dataSource, "user", userId, 0);
                 if (obj != null) {
@@ -858,8 +861,8 @@ public class Utils {
                         DataList list = obj.getDataObject("response").getDataList("data");
                         for (int j = 0; j < list.size(); j++) {
                             DataObject schemeList = list.getDataObject(j);
-                            removeSchemeData( schemeList.getString("_id") );
-                            dataSource.removeObjById(schemeList.getString("_id") );
+                            removeSchemeData(schemeList.getString("_id"));
+                            dataSource.removeObjById(schemeList.getString("_id"));
                         }
 
                     }
@@ -868,12 +871,12 @@ public class Utils {
                 Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        
+
         public static int removeSchemeData(String schemeId) {
             try {
                 SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/dist/NanoSources.js", null, false);
                 SWBDataSource dataSource;
-                DataObject obj; 
+                DataObject obj;
                 dataSource = engine.getDataSource("Art_Search");
                 obj = getDataProperty(dataSource, "search", schemeId, 0);
                 if (obj != null) {
@@ -882,7 +885,7 @@ public class Utils {
                         DataList list = obj.getDataObject("response").getDataList("data");
                         for (int j = 0; j < list.size(); j++) {
                             DataObject genList = list.getDataObject(j);
-                            dataSource.removeObjById(genList.getString("_id") );
+                            dataSource.removeObjById(genList.getString("_id"));
                         }
 
                     }
@@ -895,11 +898,10 @@ public class Utils {
                         DataList list = obj.getDataObject("response").getDataList("data");
                         for (int j = 0; j < list.size(); j++) {
                             DataObject genList = list.getDataObject(j);
-                            dataSource.removeObjById(genList.getString("_id") );
+                            dataSource.removeObjById(genList.getString("_id"));
                         }
                     }
                 }
-
 
             } catch (IOException ex) {
                 ex.printStackTrace();
