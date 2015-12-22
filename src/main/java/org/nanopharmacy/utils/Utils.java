@@ -395,6 +395,8 @@ public class Utils {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());
             datObjSearch.put("lastUpdate", date);
+            datObjSearch.put("created", date);
+            datObjSearch.put("monthYearOld", 0);
             dsSearch.updateObj(datObjSearch);
             return countNewArt + "," + countRecommended;
         }
