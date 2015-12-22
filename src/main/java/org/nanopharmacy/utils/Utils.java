@@ -400,6 +400,61 @@ public class Utils {
         }
 
         /**
+         * Copia las relaciones de un esquema de busqueda existente a uno nuevo,
+         * colocando todos los articulos como nuevos.
+         *
+         * @param newSearchId Identificador del nuevo esquema de busqueda
+         * (Search)
+         * @param localSearch Objeto con la informcacion del esquema de busquda
+         * a clonar.
+         * @return Una cadena con el numero de articulos recomendados y nuevos
+         * separados por una coma
+         */
+        public static String saveLocalNewArticles(String newSearchId, DataObject localSearch, int maxMonth) {
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
+            SWBDataSource dsSearch = engine.getDataSource("Search");
+            SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
+            SWBDataSource dsArticle = engine.getDataSource("Article");
+            int countNewArt = 0, countRecommended = 0;
+            try {
+                DataObject obj = getDataProperty(dsArtSearch, "search", localSearch.getString("_id"), 0);
+                if (obj != null) {
+                    int rows = obj.getDataObject("response").getInt("totalRows");
+                    if (rows != 0) {
+                        DataList list = obj.getDataObject("response").getDataList("data");
+                        int actualMonth = ((Calendar.getInstance().get(Calendar.YEAR))*12) + (Calendar.getInstance().get(Calendar.MONTH)+1);
+                        for (int j = 0; j < list.size(); j++) {
+                            DataObject artSearch = list.getDataObject(j);
+                            DataObject article = dsArticle.fetchObjById(artSearch.getString("article"));
+                            if ((actualMonth - (article.getInt("publicationYear") * 12 +
+                                    article.getInt("publicationMonth"))) <= maxMonth) {
+                                artSearch.put("status", 1);
+                                artSearch.put("search", newSearchId);
+                                countNewArt++;
+                                if (Integer.valueOf(artSearch.getString("ranking")) > 5) {
+                                    countRecommended++;
+                                }
+                                artSearch.remove("_id");
+                                dsArtSearch.addObj(artSearch);
+                            }
+                        }
+                    }
+                }
+                DataObject datObjSearch = dsSearch.fetchObjById(newSearchId);
+                datObjSearch.put("notification", countNewArt);
+                datObjSearch.put("recommended", countRecommended);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                String date = sdf.format(new Date());
+                datObjSearch.put("lastUpdate", date);
+                dsSearch.updateObj(datObjSearch);
+
+            } catch (IOException ex) {
+                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return countNewArt + "," + countRecommended;
+        }
+
+        /**
          * Actualiza las enfermedades que esten asociadas a un Gen en
          * espec&iacute;fico y que no existan en la BD de la aplicaci&oacute;n.
          *
@@ -761,7 +816,7 @@ public class Utils {
          * est&aacute; esperando, para dormir, o de lo contrario ocupada, y el
          * hilo se interrumpe, ya sea antes o durante la actividad.
          */
-        public static JSONObject getPublication(int artYearsOld, String gene, String altMolecular, String id)
+        public static JSONObject getPublication(int artYearsOld, String gene, String altMolecular, String id, String geneId, String alterationId)
                 throws NoDataException, UseHistoryException, ProtocolException, IOException, InterruptedException {
             ESearchImpl esearch = new ESearchImpl();
             JSONObject obj = new JSONObject();
@@ -769,24 +824,80 @@ public class Utils {
             int months = artYearsOld * 12;
             int tmpNotification = 0;
             int tmpRecommended = 0;
-            for (int m = 0; m < months; m += monthInc) {
-                JSONObject dataArt = esearch.getPublicationsInfo(gene, altMolecular, 0, 0, m, m + monthInc);
-                if (dataArt != null) {
-
-                    if (dataArt.has("error")) {
-                        SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
-                        SWBDataSource ds = engine.getDataSource("Search");
-                        ds.removeObjById(id);
-                        obj = dataArt;
-                    } else if (dataArt.has("outstanding")) {
-                        String res = saveNewArticles(dataArt, id, tmpNotification, tmpRecommended);
-                        String[] temp = res.split(",");
-                        if (temp.length == 2) {
-                            tmpNotification = Integer.parseInt(temp[0]);
-                            tmpRecommended = Integer.parseInt(temp[1]);
+            SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
+            SWBDataSource ds = engine.getDataSource("Search");
+            DataObject existSearch = getDataProperty(ds, new String[]{"gene", "altMolecular"},new String[]{geneId, alterationId},null,null);
+            System.out.println(existSearch);
+            DataList list = existSearch.getDataObject("response").getDataList("data");
+            DataObject tmpSearch = null, tmpSearchLow = null, tmpSearchUp = null;
+            boolean getExternalPblications = true;
+            int yearLow = 0, yearUp = 100, init = 0;
+            for (int i = 0; i < list.size(); i++) {
+                DataObject search = list.getDataObject(i);
+                if (!search.getString("_id").equals(id)) {
+                    System.out.println("Diferente");
+                    if (search.getInt("artYearsOld") == artYearsOld) {
+                        tmpSearch = search;
+                        break;
+                    } else if (search.getInt("artYearsOld") < artYearsOld) {
+                         System.out.println("tmpSearchLow 1");
+                        if (search.getInt("artYearsOld") > yearLow) {
+                             System.out.println("tmpSearchLow 2");
+                            yearLow = search.getInt("artYearsOld");
+                            tmpSearchLow = search;
+                        }
+                    } else if (search.getInt("artYearsOld") > artYearsOld) {
+                          System.out.println("tmpSearchUp 1 ");
+                        if (search.getInt("artYearsOld") < yearUp) {
+                              System.out.println("tmpSearchUp 2 ");
+                            yearUp = search.getInt("artYearsOld");
+                            tmpSearchUp = search;
                         }
                     }
-                    dataArt = null;
+
+                }
+            }
+            DataObject finalTmpSearch = null;
+            if (tmpSearch != null) {
+                getExternalPblications = false;
+                finalTmpSearch = tmpSearch;
+            } else if (tmpSearchUp != null) {
+                getExternalPblications = false;
+                finalTmpSearch = tmpSearchUp;
+                  init = months;
+            } else if (tmpSearchLow != null) {
+                finalTmpSearch = tmpSearchLow;
+                init = yearLow * 12;
+            }
+            
+            if (finalTmpSearch != null) {
+                String res = saveLocalNewArticles(id, finalTmpSearch, init);
+                String[] temp = res.split(",");
+                if (temp.length == 2) {
+                    tmpNotification = Integer.parseInt(temp[0]);
+                    tmpRecommended = Integer.parseInt(temp[1]);
+                }
+            }
+            System.out.println("Init: "+ init);
+            if (getExternalPblications) {
+                for (int m = init; m < months; m += monthInc) {
+                    JSONObject dataArt = esearch.getPublicationsInfo(gene, altMolecular, 0, 0, m, m + monthInc);
+                    if (dataArt != null) {
+
+                        if (dataArt.has("error")) {
+                            engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
+                            ds.removeObjById(id);
+                            obj = dataArt;
+                        } else if (dataArt.has("outstanding")) {
+                            String res = saveNewArticles(dataArt, id, tmpNotification, tmpRecommended);
+                            String[] temp = res.split(",");
+                            if (temp.length == 2) {
+                                tmpNotification = Integer.parseInt(temp[0]);
+                                tmpRecommended = Integer.parseInt(temp[1]);
+                            }
+                        }
+                        dataArt = null;
+                    }
                 }
             }
             obj.put("recommended", tmpRecommended);
