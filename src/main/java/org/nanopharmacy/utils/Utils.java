@@ -863,6 +863,7 @@ public class Utils {
             if (tmpSearch != null) {
                 getExternalPblications = false;
                 finalTmpSearch = tmpSearch;
+                 init = months;
             } else if (tmpSearchUp != null) {
                 getExternalPblications = false;
                 finalTmpSearch = tmpSearchUp;
