@@ -829,7 +829,7 @@ public class Utils {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Search");
             DataObject existSearch = getDataProperty(ds, new String[]{"gene", "altMolecular"},new String[]{geneId, alterationId},null,null);
-            System.out.println(existSearch);
+            //System.out.println(existSearch);
             DataList list = existSearch.getDataObject("response").getDataList("data");
             DataObject tmpSearch = null, tmpSearchLow = null, tmpSearchUp = null;
             boolean getExternalPblications = true;
@@ -837,21 +837,17 @@ public class Utils {
             for (int i = 0; i < list.size(); i++) {
                 DataObject search = list.getDataObject(i);
                 if (!search.getString("_id").equals(id)) {
-                    System.out.println("Diferente");
                     if (search.getInt("artYearsOld") == artYearsOld) {
                         tmpSearch = search;
                         break;
                     } else if (search.getInt("artYearsOld") < artYearsOld) {
-                         System.out.println("tmpSearchLow 1");
                         if (search.getInt("artYearsOld") > yearLow) {
-                             System.out.println("tmpSearchLow 2");
                             yearLow = search.getInt("artYearsOld");
                             tmpSearchLow = search;
                         }
                     } else if (search.getInt("artYearsOld") > artYearsOld) {
-                          System.out.println("tmpSearchUp 1 ");
                         if (search.getInt("artYearsOld") < yearUp) {
-                              System.out.println("tmpSearchUp 2 ");
+
                             yearUp = search.getInt("artYearsOld");
                             tmpSearchUp = search;
                         }
@@ -881,7 +877,6 @@ public class Utils {
                     tmpRecommended = Integer.parseInt(temp[1]);
                 }
             }
-            System.out.println("Init: "+ init);
             if (getExternalPblications) {
                 for (int m = init; m < months; m += monthInc) {
                     JSONObject dataArt = esearch.getPublicationsInfo(gene, altMolecular, 0, 0, m, m + monthInc);
