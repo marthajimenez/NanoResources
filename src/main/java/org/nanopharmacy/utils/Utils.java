@@ -5,6 +5,7 @@
  */
 package org.nanopharmacy.utils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -38,6 +39,16 @@ import org.nanopharmacy.util.parser.html.HTMLParser;
  * @author martha.jimenez
  */
 public class Utils {
+
+    private static String contextPath;
+
+    public static String getContextPath() {
+        return contextPath;
+    }
+
+    public static void setContextPath(String contextPath) {
+        Utils.contextPath = contextPath;
+    }
 
     /**
      * Defines the size used for creating arrays that will be used in I/O
@@ -424,12 +435,12 @@ public class Utils {
                     int rows = obj.getDataObject("response").getInt("totalRows");
                     if (rows != 0) {
                         DataList list = obj.getDataObject("response").getDataList("data");
-                        int actualMonth = ((Calendar.getInstance().get(Calendar.YEAR))*12) + (Calendar.getInstance().get(Calendar.MONTH)+1);
+                        int actualMonth = ((Calendar.getInstance().get(Calendar.YEAR)) * 12) + (Calendar.getInstance().get(Calendar.MONTH) + 1);
                         for (int j = 0; j < list.size(); j++) {
                             DataObject artSearch = list.getDataObject(j);
                             DataObject article = dsArticle.fetchObjById(artSearch.getString("article"));
-                            if ((actualMonth - (article.getInt("publicationYear") * 12 +
-                                    article.getInt("publicationMonth"))) <= maxMonth) {
+                            if ((actualMonth - (article.getInt("publicationYear") * 12
+                                    + article.getInt("publicationMonth"))) <= maxMonth) {
                                 artSearch.put("status", 1);
                                 artSearch.put("search", newSearchId);
                                 countNewArt++;
@@ -828,7 +839,7 @@ public class Utils {
             int tmpRecommended = 0;
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Search");
-            DataObject existSearch = getDataProperty(ds, new String[]{"gene", "altMolecular"},new String[]{geneId, alterationId},null,null);
+            DataObject existSearch = getDataProperty(ds, new String[]{"gene", "altMolecular"}, new String[]{geneId, alterationId}, null, null);
             //System.out.println(existSearch);
             DataList list = existSearch.getDataObject("response").getDataList("data");
             DataObject tmpSearch = null, tmpSearchLow = null, tmpSearchUp = null;
@@ -859,16 +870,16 @@ public class Utils {
             if (tmpSearch != null) {
                 getExternalPblications = false;
                 finalTmpSearch = tmpSearch;
-                 init = months;
+                init = months;
             } else if (tmpSearchUp != null) {
                 getExternalPblications = false;
                 finalTmpSearch = tmpSearchUp;
-                  init = months;
+                init = months;
             } else if (tmpSearchLow != null) {
                 finalTmpSearch = tmpSearchLow;
                 init = yearLow * 12;
             }
-            
+
             if (finalTmpSearch != null) {
                 String res = saveLocalNewArticles(id, finalTmpSearch, init);
                 String[] temp = res.split(",");
@@ -959,7 +970,7 @@ public class Utils {
 
         public static void removeUserData(String userId) {
             try {
-                SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/dist/NanoSources.js", null, false);
+                SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
                 SWBDataSource dataSource;
                 DataObject obj;
                 dataSource = engine.getDataSource("Search");
@@ -983,7 +994,7 @@ public class Utils {
 
         public static int removeSchemeData(String schemeId) {
             try {
-                SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/dist/NanoSources.js", null, false);
+                SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
                 SWBDataSource dataSource;
                 DataObject obj;
                 dataSource = engine.getDataSource("Art_Search");
@@ -1018,6 +1029,43 @@ public class Utils {
             }
             return 0;
         }
+
+        /**
+         * Remueve las im&aacute;genes del sistema de archivos.
+         * 
+         * @param imageId Identificador de la imagen a eliminar.
+         */
+        public static void removeImages(String imageId) {
+            try {
+                SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
+                SWBDataSource dataSource = engine.getDataSource("Images");
+                DataObject obj = getDataProperty(dataSource, "_id", imageId, 0);
+                if (obj != null) {
+                    int rows = obj.getDataObject("response").getInt("totalRows");
+                    if (rows != 0) {
+                        DataList list = obj.getDataObject("response").getDataList("data");
+                        for (int i = 0; i < list.size(); i++) {
+                            DataObject imageObj = list.getDataObject(i);
+                            if (imageObj.getDataList("src") != null) {
+                                for (int j = 0; j < imageObj.getDataList("src").size(); j++) {
+                                    DataObject src = imageObj.getDataList("src").getDataObject(j);
+                                    if (src.getString("id") != null) {
+                                        String fileDir = Utils.getContextPath()+ "/" +  src.getString("id");
+                                        File file = new File(fileDir);
+                                        if (file.exists()) {
+                                            file.delete();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
     }
 
     /**

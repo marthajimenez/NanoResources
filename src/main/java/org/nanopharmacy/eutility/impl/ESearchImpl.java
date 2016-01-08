@@ -1528,7 +1528,7 @@ public class ESearchImpl {
         try {
             conex = (HttpURLConnection) cmd.openConnection();
             conex.setConnectTimeout(30000);
-            conex.setReadTimeout(60000);
+            conex.setReadTimeout(1500000);
             conex.setRequestMethod("GET");
             conex.setDoOutput(true);
             conex.connect();
