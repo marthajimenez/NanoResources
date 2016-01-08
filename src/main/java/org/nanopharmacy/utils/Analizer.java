@@ -6,16 +6,12 @@
 package org.nanopharmacy.utils;
 
 import java.io.IOException;
-import java.nio.file.FileStore;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.semanticwb.datamanager.DataList;
 import org.semanticwb.datamanager.DataMgr;
@@ -32,6 +28,26 @@ public class Analizer {
     private static ArrayList<String> glosary;
     private static Stream<String> lines;
 
+    
+    public static void loadGlossary(String url){
+        SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
+        final SWBDataSource dsGlossary = engine.getDataSource("Glossary");
+        DataObject newGlossaryObj = new DataObject();
+        try {
+            lines = Files.lines(Paths.get(url));
+            Iterator<String> iterator = lines.iterator();
+            while(iterator.hasNext()){
+                newGlossaryObj = new DataObject();
+                newGlossaryObj.put("key", iterator.next());
+                //newGlossaryObj.put("definition", "");
+                dsGlossary.addObj(newGlossaryObj);
+                
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     public static void analizer(String idSearch, String idArticle) {
         try {
             lines = Files.lines(Paths.get("D:/Docs/Documents/glosary.txt"));
