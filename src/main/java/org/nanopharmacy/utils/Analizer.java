@@ -86,7 +86,7 @@ public class Analizer {
             int rows = obj.getDataObject("response").getInt("totalRows");
             if (rows > 0) {
                 String abstractTxt = obj.getDataObject("response").getDataList("data").getDataObject(0).getString("abstract");
-                System.out.println("abstract: " + abstractTxt);
+                //System.out.println("abstract: " + abstractTxt);
                 Analizer.analizeAbstract(engine, abstractTxt, idSearch);
             }
         } catch (IOException ex) {
@@ -138,7 +138,7 @@ public class Analizer {
 
     }
 
-    public ArrayList<String> isCustomRanking(SWBScriptEngine engine, String idSearch ) {
+    public ArrayList<String> isCustomRanking(SWBScriptEngine engine, String idSearch) {
         ArrayList<String> phrases = new ArrayList<>();
         try {
             SWBDataSource dsAnalize = engine.getDataSource("Analize");
@@ -147,10 +147,10 @@ public class Analizer {
             if (rows > 0) {
                 DataList dataList = obj.getDataObject("response").getDataList("data");
                 for (int i = 0; i < dataList.size(); i++) {
-                    if(dataList.getDataObject(i).getString("key") != null) {
+                    if (dataList.getDataObject(i).getString("key") != null) {
                         phrases.add(dataList.getDataObject(i).getString("key"));
                     }
-                    
+
 //                    if (abstractTxt.contains(key)) {
 //                        isCustomRanking = true;
 //                        break;
@@ -180,17 +180,18 @@ public class Analizer {
         boolean isTreshold = false;
         float percentAccept = 0.66F;
         float percentReject = 0.51F;
-        float percent = frequency / totalArtsAccept;
+        float percent = (float) frequency / (float) totalArtsAccept;
         try {
             if (threshold == 0) { // No esta entre las frases aceptadas
                 if (percent > percentAccept) {
                     analizeObj.put("threshold", 1);
-                    System.out.println("key: " + analizeObj.getString("key"));
+                    //System.out.println("Entro : " + analizeObj.getString("key"));
                     dsAnalize.updateObj(analizeObj);
                     isTreshold = true;
                 }
             } else { // Esta entre las frases aceptadas
                 if (percent < percentReject) {
+                    //System.out.println("Salio : " + analizeObj.getString("key"));
                     analizeObj.put("threshold", 0);
                     dsAnalize.updateObj(analizeObj);
                 }
@@ -239,17 +240,25 @@ public class Analizer {
                             analizeObj.put("threshold", 0);
                             dsAnalize.addObj(analizeObj);
                         }
-                        if (totalArtsAccept > 2) {
-                            Analizer.calculateThreshold(totalArtsAccept, frequency, analizeObj.containsKey("threshold") ? analizeObj.getInt("threshold") : 0, analizeObj, dsAnalize);
-                            if (analizeObj.containsKey("threshold") && analizeObj.getInt("threshold") == 1) {
-                                phrases.add(s);
-                            }
-                        }
 
                     } catch (IOException ex) {
                         Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
+            }
+            if (totalArtsAccept > 2) {
+                DataObject analizeObj = new DataObject();
+                obj = Utils.ENG.getDataProperty(dsAnalize, new String[]{"search"}, new String[]{idSearch}, null, null);
+                Iterator<DataObject> dataList = Utils.ENG.getDataList(obj);
+                while (dataList.hasNext()) {
+                    analizeObj = dataList.next();
+                    Analizer.calculateThreshold(totalArtsAccept, analizeObj.getInt("frequency"),
+                            analizeObj.containsKey("threshold") ? analizeObj.getInt("threshold") : 0, analizeObj, dsAnalize);
+                    if (analizeObj.containsKey("threshold") && analizeObj.getInt("threshold") == 1) {
+                        phrases.add(analizeObj.getString("key"));
+                    }
+                }
+
             }
             if (phrases.size() > 0) {
                 Analizer.reclassifyArticles(engine, idSearch, phrases);

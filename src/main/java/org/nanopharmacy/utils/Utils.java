@@ -1044,6 +1044,19 @@ public class Utils {
                         }
                     }
                 }
+                
+                dataSource = engine.getDataSource("Analize");
+                obj = getDataProperty(dataSource, "search", schemeId, 0);
+                if (obj != null) {
+                    int rows = obj.getDataObject("response").getInt("totalRows");
+                    if (rows != 0) {
+                        DataList list = obj.getDataObject("response").getDataList("data");
+                        for (int j = 0; j < list.size(); j++) {
+                            DataObject genList = list.getDataObject(j);
+                            dataSource.removeObjById(genList.getString("_id"));
+                        }
+                    }
+                }
 
             } catch (IOException ex) {
                 ex.printStackTrace();
