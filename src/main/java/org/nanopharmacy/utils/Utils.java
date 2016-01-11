@@ -14,6 +14,7 @@ import java.net.ProtocolException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jdom.Document;
@@ -248,7 +249,9 @@ public class Utils {
             DataObject data = new DataObject();
 
             query.put("data", data);
-            data.put(property, valueProp != null ? valueProp : valProp);
+            if(property!=null){
+                data.put(property, valueProp != null ? valueProp : valProp); 
+            }
             DataObject obj = ds.fetch(query);
             return obj;
         }
@@ -295,6 +298,20 @@ public class Utils {
             }
             DataObject obj = ds.fetch(query);
             return obj;
+        }
+        /**
+         * 
+         * @param ds
+         * @param namesString
+         * @param values
+         * @param namesInt
+         * @param valuesInt
+         * @return
+         * @throws IOException 
+         */
+        
+         public static Iterator<DataObject> getDataList(DataObject obj) {
+            return obj.getDataObject("response").getDataList("data").iterator();
         }
 
         /**
@@ -506,6 +523,7 @@ public class Utils {
                 DataObject obj = new DataObject();
                 DataObject dataNewArticle = new DataObject();
                 String idArticle = null;
+                String abstractTxt = "";
                 int status = 0;
                 int rows = 0;
                 //Hace una petición a la BD a traves de la propiedad "pmcid" del artículo
@@ -524,6 +542,7 @@ public class Utils {
                     //Si el articulo no existe, guardar el objeto 
                     dataNewArticle = setPropArticle(ds, art, pmid, pmc);
                     idArticle = dataNewArticle.getDataObject("response").getDataObject("data").getString("_id");
+                    abstractTxt = dataNewArticle.getDataObject("response").getDataObject("data").getString("abstract");
                     status = 1;
                     countNewArt++;
                     if (ranking > 5) {
@@ -533,7 +552,8 @@ public class Utils {
                     //si ya existe el articulo, obtiene la información del artículo
                     dataNewArticle = obj;
                     idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
-
+                    abstractTxt = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("abstract");
+                    
                     //Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con el siguiente articulo 
                     String[] propertiesName = {"article", "search"};
                     String[] propertiesValues = {idArticle, idSearch};
@@ -549,8 +569,10 @@ public class Utils {
                             countRecommended++;
                         }
                     }
-                    art = null;
+                    
                 }
+                art = null;
+                
                 //almacena la asociación entre una búsqueda y un artículo
                 DataObject newArtSearch = new DataObject();
                 newArtSearch.put("search", idSearch);
