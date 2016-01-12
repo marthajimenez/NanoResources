@@ -78,7 +78,8 @@ public class Analizer {
      * @param idSearch Identificador de la busquedad
      * @param idArticle Identificador del articulo
      */
-    public static void analizer(String idSearch, String idArticle) {
+    public static int analizer(String idSearch, String idArticle) {
+        int newRecommended = 0;
         try {
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource dsArticle = engine.getDataSource("Article");
@@ -87,11 +88,12 @@ public class Analizer {
             if (rows > 0) {
                 String abstractTxt = obj.getDataObject("response").getDataList("data").getDataObject(0).getString("abstract");
                 //System.out.println("abstract: " + abstractTxt);
-                Analizer.analizeAbstract(engine, abstractTxt, idSearch);
+                newRecommended = Analizer.analizeAbstract(engine, abstractTxt, idSearch);
             }
         } catch (IOException ex) {
             Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return newRecommended;
     }
 
     /**
@@ -101,66 +103,58 @@ public class Analizer {
      * @param idSearch Identificador de la busqueda actual.
      * @param phrases Lista de frases aceptadas.
      */
-    public static void reclassifyArticles(SWBScriptEngine engine, String idSearch, ArrayList<String> phrases) {
+    public static int reclassifyArticles(SWBScriptEngine engine, String idSearch, ArrayList<String> phrases) {
+        int newRecommended = 0;
         try {
             SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
             SWBDataSource dsArticle = engine.getDataSource("Article");
-
+            SWBDataSource dsSearch = engine.getDataSource("Search");
             DataObject dataArtSearch = Utils.ENG.getDataProperty(dsArtSearch, new String[]{"search"}, new String[]{idSearch}, null, null);
-            DataObject dataArticle;
             int rows = dataArtSearch.getDataObject("response").getInt("totalRows");
             if (rows > 0) {
                 DataList dataList = dataArtSearch.getDataObject("response").getDataList("data");
-                for (int i = 0; i < dataList.size(); i++) {
+                newRecommended = reclassifyArticlesModel( engine, dataList , idSearch, phrases);
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return newRecommended;
+    }
+
+    public static int reclassifyArticlesModel(SWBScriptEngine engine,DataList dataList ,String idSearch, ArrayList<String> phrases) {
+        SWBDataSource dsArticle = engine.getDataSource("Article");
+        SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
+        DataObject dataArticle;
+        int newRecommended = 0;
+        for (int i = 0; i < dataList.size(); i++) {
+            if (dataList.getDataObject(i).getInt("status") == 1) {
+                try {
                     String articleId = dataList.getDataObject(i).getString("article");
                     dataArticle = Utils.ENG.getDataProperty(dsArticle, "_id", articleId, 0);
-                    rows = dataArticle.getDataObject("response").getInt("totalRows");
+                    int rows = dataArticle.getDataObject("response").getInt("totalRows");
                     if (rows > 0) {
                         String abstractTxt = dataArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("abstract");
                         Iterator it = phrases.iterator();
+                        int ranking = 0;
                         while (it.hasNext()) {
                             if (abstractTxt.contains(it.next().toString())) {
-                                break;
-                                //Algoritmo de rankeo
-                                //Se incrementa en 1 el conteo de recomendados detro del esquema correspondiente 
+                                ranking++;
                             }
-
                         }
-
-//                        isCustomRanking(engine, abstractTxt, idSearch, phrases); //Cambiar status a 4 (recopmendado) y incrementar en 1 el conteo de recomendados detro del esquema correspondiente 
+                        ranking = Math.round(((float) ranking / (float) phrases.size()) * 10);
+                        System.out.println("Ranking: " + ranking);
+                        dataList.getDataObject(i).put("ranking", ranking);
+                        dsArtSearch.updateObj(dataList.getDataObject(i));
+                        if (ranking > 5) {
+                            newRecommended++;
+                        }
                     }
-                }
-
-            }
-        } catch (IOException ex) {
-            Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-    }
-
-    public ArrayList<String> isCustomRanking(SWBScriptEngine engine, String idSearch) {
-        ArrayList<String> phrases = new ArrayList<>();
-        try {
-            SWBDataSource dsAnalize = engine.getDataSource("Analize");
-            DataObject obj = Utils.ENG.getDataProperty(dsAnalize, new String[]{"search"}, new String[]{idSearch}, new String[]{"threshold"}, new int[]{1});
-            int rows = obj.getDataObject("response").getInt("totalRows");
-            if (rows > 0) {
-                DataList dataList = obj.getDataObject("response").getDataList("data");
-                for (int i = 0; i < dataList.size(); i++) {
-                    if (dataList.getDataObject(i).getString("key") != null) {
-                        phrases.add(dataList.getDataObject(i).getString("key"));
-                    }
-
-//                    if (abstractTxt.contains(key)) {
-//                        isCustomRanking = true;
-//                        break;
-//                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-        } catch (IOException ex) {
-            Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return phrases;
+        return newRecommended;
     }
 
     /**
@@ -185,7 +179,7 @@ public class Analizer {
             if (threshold == 0) { // No esta entre las frases aceptadas
                 if (percent > percentAccept) {
                     analizeObj.put("threshold", 1);
-                    //System.out.println("Entro : " + analizeObj.getString("key"));
+                    System.out.println("Entro : " + analizeObj.getString("key"));
                     dsAnalize.updateObj(analizeObj);
                     isTreshold = true;
                 }
@@ -208,7 +202,8 @@ public class Analizer {
      * @param abstractTxt
      * @param idSearch
      */
-    public static void analizeAbstract(SWBScriptEngine engine, String abstractTxt, String idSearch) {
+    public static int analizeAbstract(SWBScriptEngine engine, String abstractTxt, String idSearch) {
+        int newRecommended = 0;
         try {
             SWBDataSource dsAnalize = engine.getDataSource("Analize");
             SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
@@ -246,27 +241,29 @@ public class Analizer {
                     }
                 }
             }
+            boolean calculateThreshold = false;
             if (totalArtsAccept > 2) {
                 DataObject analizeObj = new DataObject();
                 obj = Utils.ENG.getDataProperty(dsAnalize, new String[]{"search"}, new String[]{idSearch}, null, null);
                 Iterator<DataObject> dataList = Utils.ENG.getDataList(obj);
                 while (dataList.hasNext()) {
                     analizeObj = dataList.next();
-                    Analizer.calculateThreshold(totalArtsAccept, analizeObj.getInt("frequency"),
-                            analizeObj.containsKey("threshold") ? analizeObj.getInt("threshold") : 0, analizeObj, dsAnalize);
+                    if (Analizer.calculateThreshold(totalArtsAccept, analizeObj.getInt("frequency"),
+                            analizeObj.containsKey("threshold") ? analizeObj.getInt("threshold") : 0, analizeObj, dsAnalize)) {
+                        calculateThreshold = true;
+                    }
                     if (analizeObj.containsKey("threshold") && analizeObj.getInt("threshold") == 1) {
                         phrases.add(analizeObj.getString("key"));
                     }
                 }
-
             }
-            if (phrases.size() > 0) {
-                Analizer.reclassifyArticles(engine, idSearch, phrases);
+            if (phrases.size() > 0 && calculateThreshold) {
+                newRecommended = Analizer.reclassifyArticles(engine, idSearch, phrases);
             }
-//        });
         } catch (IOException ex) {
             Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return newRecommended;
     }
 
 }
