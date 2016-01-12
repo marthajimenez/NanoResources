@@ -5,6 +5,7 @@
  */
 package org.nanopharmacy.utils;
 
+import org.nanopharmacy.ai.Analizer;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -249,8 +250,8 @@ public class Utils {
             DataObject data = new DataObject();
 
             query.put("data", data);
-            if(property!=null){
-                data.put(property, valueProp != null ? valueProp : valProp); 
+            if (property != null) {
+                data.put(property, valueProp != null ? valueProp : valProp);
             }
             DataObject obj = ds.fetch(query);
             return obj;
@@ -299,18 +300,13 @@ public class Utils {
             DataObject obj = ds.fetch(query);
             return obj;
         }
+
         /**
          * 
-         * @param ds
-         * @param namesString
-         * @param values
-         * @param namesInt
-         * @param valuesInt
-         * @return
-         * @throws IOException 
+         * @param obj
+         * @return 
          */
-        
-         public static Iterator<DataObject> getDataList(DataObject obj) {
+        public static Iterator<DataObject> getDataList(DataObject obj) {
             return obj.getDataObject("response").getDataList("data").iterator();
         }
 
@@ -507,8 +503,8 @@ public class Utils {
             DataObject datObjSearch = dsSearch.fetchObjById(idSearch);
 
             JSONArray arrOutstanding = publications.getJSONArray("outstanding");
-            int countNewArt = datObjSearch.get("notification") != null ? datObjSearch.getInt("notification") : 0;
-            int countRecommended = datObjSearch.get("recommeded") != null ? datObjSearch.getInt("recommeded") : 0;
+            int countNewArt = (datObjSearch.get("notification") != null && datObjSearch.getInt("notification") > 0) ? datObjSearch.getInt("notification") : 0;
+            int countRecommended = (datObjSearch.get("recommeded") != null && datObjSearch.getInt("recommeded") > 0) ? datObjSearch.getInt("recommeded") : 0;
             for (int i = 0; i < arrOutstanding.length(); i++) {//
                 JSONObject art = arrOutstanding.getJSONObject(i);
 
@@ -526,6 +522,10 @@ public class Utils {
                 String abstractTxt = "";
                 int status = 0;
                 int rows = 0;
+                //Verifica la cantidad de articulos aceptados
+                DataObject objSearch = Utils.ENG.getDataProperty(dsArtSearch, new String[]{"search"}, new String[]{idSearch}, new String[]{"status"}, new int[]{2});//status
+                boolean isValidArtsAccept = objSearch.getDataObject("response").getInt("totalRows") > 2;
+
                 //Hace una petición a la BD a traves de la propiedad "pmcid" del artículo
                 if (pmc != 0) {
                     obj = getDataProperty(ds, "pmcid", null, pmc);
@@ -545,7 +545,7 @@ public class Utils {
                     abstractTxt = dataNewArticle.getDataObject("response").getDataObject("data").getString("abstract");
                     status = 1;
                     countNewArt++;
-                    if (ranking > 5) {
+                    if (ranking > 5 && !isValidArtsAccept) {
                         countRecommended++;
                     }
                 } else {
@@ -553,7 +553,7 @@ public class Utils {
                     dataNewArticle = obj;
                     idArticle = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
                     abstractTxt = dataNewArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("abstract");
-                    
+
                     //Consulta la tabla de asociación entre articulos y búsquedas y si ya existe la relación, continua con el siguiente articulo 
                     String[] propertiesName = {"article", "search"};
                     String[] propertiesValues = {idArticle, idSearch};
@@ -565,30 +565,35 @@ public class Utils {
                     } else {
                         //Sino existe asociacion significa que es nuevo para la busqueda
                         countNewArt++;
-                        if (ranking > 5) {
+                        if (ranking > 5 && !isValidArtsAccept) {
                             countRecommended++;
                         }
                     }
-                    
+
                 }
                 art = null;
-                
-                //almacena la asociación entre una búsqueda y un artículo
+
+                //almacena la asociación entre una búsqueda y un artículo (Art_Search)
                 DataObject newArtSearch = new DataObject();
                 newArtSearch.put("search", idSearch);
                 newArtSearch.put("article", idArticle);
                 newArtSearch.put("ranking", ranking);
                 newArtSearch.put("status", status);
-                dsArtSearch.addObj(newArtSearch);
+                DataObject addArtSearch = dsArtSearch.addObj(newArtSearch);
+
+                if (isValidArtsAccept) {
+                    countRecommended = countRecommended + Analizer.getUpdateArticleRanking(engine, idSearch, abstractTxt, addArtSearch.getDataObject("response").getDataObject("data").getString("_id"));
+                }
 
             }
             arrOutstanding = null;
-            //asigna el número de artículos nuevos y recomendados
+            //asigna el número de artículos nuevos y recomendados (Search)
             datObjSearch.put("notification", countNewArt);
             datObjSearch.put("recommended", countRecommended);
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String date = sdf.format(new Date());
             datObjSearch.put("lastUpdate", date);
+            //Comentar cada que se quiera probar la actualizacion
             dsSearch.updateObj(datObjSearch);
         }
 
@@ -1044,7 +1049,7 @@ public class Utils {
                         }
                     }
                 }
-                
+
                 dataSource = engine.getDataSource("Analize");
                 obj = getDataProperty(dataSource, "search", schemeId, 0);
                 if (obj != null) {
@@ -1067,7 +1072,7 @@ public class Utils {
 
         /**
          * Remueve las im&aacute;genes del sistema de archivos.
-         * 
+         *
          * @param imageId Identificador de la imagen a eliminar.
          */
         public static void removeImages(String imageId) {
@@ -1084,8 +1089,9 @@ public class Utils {
                             if (imageObj.getDataList("src") != null) {
                                 for (int j = 0; j < imageObj.getDataList("src").size(); j++) {
                                     DataObject src = imageObj.getDataList("src").getDataObject(j);
-                                    if (src.getString("id") != null) {
-                                        String fileDir = Utils.getContextPath()+ "/" +  src.getString("id");
+                                    if (src.getString("id") != null && (!src.getString("id").equals("o_1a6ocpot0jpmfki1p46b9o1v7ec")
+                                            || !src.getString("id").equals("o_1a5d7gttb9ba16sotcr5b81goa7") || !src.getString("id").equals("o_1a6ocrqnvs81clhj95keok09h"))) {
+                                        String fileDir = Utils.getContextPath() + "/" + src.getString("id");
                                         File file = new File(fileDir);
                                         if (file.exists()) {
                                             file.delete();
@@ -1100,6 +1106,16 @@ public class Utils {
                 Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+
+        /*Usar cuando se pruebe actualizacion de articulos
+        public static void testSaveUpdateArticles(String geneSymbol, String molAlteration, String searchId) throws NoDataException, UseHistoryException, IOException, InterruptedException {
+            ESearchImpl esearch = new ESearchImpl();
+            System.out.println("----------------------------------------------------------------------------------------------");
+            JSONObject dataArt = esearch.getPublicationsInfo(geneSymbol, molAlteration, 0, 0, 0, 9);
+            if (dataArt.has("outstanding")) {
+                saveUpdateArticles(dataArt, searchId);
+            }
+        }*/
 
     }
 
