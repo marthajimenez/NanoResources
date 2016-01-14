@@ -219,9 +219,9 @@ public class Analizer {
                     }
                 }
             }
-            phrases.add("prognosis");
-            phrases.add("treatment");
-            phrases.add("prediction");
+//            phrases.add("prognosis");
+//            phrases.add("treatment");
+//            phrases.add("prediction");
         } catch (IOException ex) {
             Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -309,9 +309,9 @@ public class Analizer {
                     }
                 }
 
-                phrases.add("prognosis");
-                phrases.add("treatment");
-                phrases.add("prediction");
+//                phrases.add("prognosis");
+//                phrases.add("treatment");
+//                phrases.add("prediction");
                 if (phrases.size() > 0 && calculateThreshold) {
                     newRecommended = Analizer.reclassifyArticles(engine, idSearch, phrases);
                 }
