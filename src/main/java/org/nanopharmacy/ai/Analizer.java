@@ -114,7 +114,7 @@ public class Analizer {
             if (rows > 0) {
                 DataList dataList = dataArtSearch.getDataObject("response").getDataList("data");
                 for (int i = 0; i < dataList.size(); i++) {
-                    if (dataList.getDataObject(i).getInt("status") == 1) {
+                    if (dataList.getDataObject(i).getInt("status") == 1 && dataList.getDataObject(i).getInt("ranking") < 6) {
                         String articleId = dataList.getDataObject(i).getString("article");
                         dataArticle = Utils.ENG.getDataProperty(dsArticle, "_id", articleId, 0);
                         rows = dataArticle.getDataObject("response").getInt("totalRows");
@@ -139,26 +139,38 @@ public class Analizer {
 
     /**
      * Determina el ranking del contenido de un abstract en un articulo.
-     * 
-     * @param phrases Arreglo del conjunto de frases que han aparecido en un 
+     *
+     * @param phrases Arreglo del conjunto de frases que han aparecido en un
      * esquema de busqueda
-     * @param abstractTxt Texto del abstract para el cual se determinara el ranking
+     * @param abstractTxt Texto del abstract para el cual se determinara el
+     * ranking
      * @return ranking para el contenido de un articulo
      */
     private static int calculateRanking(ArrayList<String> phrases, String abstractTxt) {
         Iterator it = phrases.iterator();
+        int c = 0;
         int ranking = 0;
         while (it.hasNext()) {
-            if (abstractTxt.contains(it.next().toString())) {
+            String phrase = it.next().toString();
+            if (abstractTxt.contains(phrase)) {
                 ranking++;
+//                if (phrase.equals("prognosis")) {
+//                    c++;
+//                } else if (phrase.equals("prediction")) {
+//                    c++;
+//                } else if (phrase.equals("treatment")) {
+//                    c++;
+//                }
             }
+
         }
-        ranking = Math.round(((float) ranking / (float) phrases.size()) * 10);
+        ranking = Math.round(((float) ranking / (float) (phrases.size() )) * 10);
         return ranking;
     }
 
     /**
-     * Obtiene el ranking para un articulo de acuerdo a la aparición de uno o mas keyword
+     * Obtiene el ranking para un articulo de acuerdo a la aparición de uno o
+     * mas keyword
      *
      * @param engine Engine
      * @param idSearch Identificador del esquema de busqueda
@@ -188,9 +200,10 @@ public class Analizer {
 
     /**
      * Obtiene el glosario de keyword que tiene un esquema de busqueda
+     *
      * @param engine Engine.
      * @param idSearch Identificador del esquema de busqueda
-     * @return Arreglo con  los keyword asociados a un esquema de busqueda
+     * @return Arreglo con los keyword asociados a un esquema de busqueda
      */
     private static ArrayList getGlossaryThresholdSearch(SWBScriptEngine engine, String idSearch) {
         ArrayList<String> phrases = new ArrayList<>();
@@ -206,7 +219,9 @@ public class Analizer {
                     }
                 }
             }
-
+            phrases.add("prognosis");
+            phrases.add("treatment");
+            phrases.add("prediction");
         } catch (IOException ex) {
             Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -240,7 +255,7 @@ public class Analizer {
                     isTreshold = true;
                 }
             } else { // Esta entre las frases aceptadas
-                if (percent < percentReject) {
+                if (percent < percentReject && analizeObj.getInt("addByUser") == 0) {
                     System.out.println("Salio : " + analizeObj.getString("key"));
                     analizeObj.put("threshold", 0);
                     dsAnalize.updateObj(analizeObj);
@@ -253,10 +268,10 @@ public class Analizer {
     }
 
     /**
-     * Analiza el abstract de un articulo, incrementa las apariciones de una frase, 
-     * determina si alguna frase se convierte en un keyword para reclasificar los 
-     * articulos que tienen estatus de nuevo. 
-     * 
+     * Analiza el abstract de un articulo, incrementa las apariciones de una
+     * frase, determina si alguna frase se convierte en un keyword para
+     * reclasificar los articulos que tienen estatus de nuevo.
+     *
      * @param engine Engine
      * @param abstractTxt Representa el abstract de un articulo
      * @param idSearch Identificador de un esquema de busqueda
@@ -293,9 +308,13 @@ public class Analizer {
                         phrases.add(analizeObj.getString("key"));
                     }
                 }
-            }
-            if (phrases.size() > 0 && calculateThreshold) {
-                newRecommended = Analizer.reclassifyArticles(engine, idSearch, phrases);
+
+                phrases.add("prognosis");
+                phrases.add("treatment");
+                phrases.add("prediction");
+                if (phrases.size() > 0 && calculateThreshold) {
+                    newRecommended = Analizer.reclassifyArticles(engine, idSearch, phrases);
+                }
             }
         } catch (IOException ex) {
             Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
@@ -303,11 +322,20 @@ public class Analizer {
         return newRecommended;
     }
 
+    public static int userReclassifyArticle(String key, String idSearch) {
+        SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
+        ArrayList<String> thresholdList = Analizer.getGlossaryThresholdSearch(engine, idSearch);
+        int reclassifyArticles = reclassifyArticles(engine, idSearch, thresholdList);
+        return reclassifyArticles;
+    }
+
     /**
      * Incrementa las ocurrencias de una frase en un esquema de busqueda.
-     * 
-     * @param dsAnalize SWBDataSource de la tabla que contiene las frases que ocurren en una busqueda
-     * @param s Representa la frase que sera incrementada en las ocurrencias de una busqueda
+     *
+     * @param dsAnalize SWBDataSource de la tabla que contiene las frases que
+     * ocurren en una busqueda
+     * @param s Representa la frase que sera incrementada en las ocurrencias de
+     * una busqueda
      * @param idSearch Identificador del esquema de busqueda
      */
     private static void increaseFrequency(SWBDataSource dsAnalize, String s, String idSearch) {
@@ -327,6 +355,7 @@ public class Analizer {
                 analizeObj.put("key", s);
                 analizeObj.put("frequency", frequency);
                 analizeObj.put("threshold", 0);
+                analizeObj.put("addByUser", 0);
                 dsAnalize.addObj(analizeObj);
             }
 

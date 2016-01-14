@@ -581,7 +581,7 @@ public class Utils {
                 newArtSearch.put("status", status);
                 DataObject addArtSearch = dsArtSearch.addObj(newArtSearch);
 
-                if (isValidArtsAccept) {
+                if (isValidArtsAccept && ranking < 10) {
                     countRecommended = countRecommended + Analizer.getUpdateArticleRanking(engine, idSearch, abstractTxt, addArtSearch.getDataObject("response").getDataObject("data").getString("_id"));
                 }
 
