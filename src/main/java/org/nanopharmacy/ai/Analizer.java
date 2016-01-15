@@ -103,7 +103,7 @@ public class Analizer {
      * @param idSearch Identificador de la busqueda actual.
      * @param phrases Lista de frases aceptadas.
      */
-    public static int reclassifyArticles(SWBScriptEngine engine, String idSearch, ArrayList<String> phrases) {
+    public static int reclassifyArticles(SWBScriptEngine engine, String idSearch, ArrayList<String> phrases, boolean isByUser) {
         int newRecommended = 0;
         try {
             SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
@@ -114,17 +114,25 @@ public class Analizer {
             if (rows > 0) {
                 DataList dataList = dataArtSearch.getDataObject("response").getDataList("data");
                 for (int i = 0; i < dataList.size(); i++) {
-                    if (dataList.getDataObject(i).getInt("status") == 1 && dataList.getDataObject(i).getInt("ranking") < 6) {
+                    if (((dataList.getDataObject(i).getInt("status") == 1 && (dataList.getDataObject(i).getInt("ranking") < 6)) && !isByUser)
+                            || ((dataList.getDataObject(i).getInt("status") == 1 || dataList.getDataObject(i).getInt("status") == 4) && isByUser)) {
                         String articleId = dataList.getDataObject(i).getString("article");
                         dataArticle = Utils.ENG.getDataProperty(dsArticle, "_id", articleId, 0);
                         rows = dataArticle.getDataObject("response").getInt("totalRows");
                         if (rows > 0) {
                             String abstractTxt = dataArticle.getDataObject("response").getDataList("data").getDataObject(0).getString("abstract");
-                            int ranking = Analizer.calculateRanking(phrases, abstractTxt);
+                            int ranking = Analizer.calculateRanking(phrases, abstractTxt, isByUser);
+                            boolean isAlreadyRecommeded = true;
+                            if (ranking < dataList.getDataObject(i).getInt("ranking")) {
+                                ranking = dataList.getDataObject(i).getInt("ranking");
+                            }
+                            if (dataList.getDataObject(i).getInt("ranking") > 5) {
+                                isAlreadyRecommeded = false;
+                            }
                             System.out.println("Ranking: " + ranking);
                             dataList.getDataObject(i).put("ranking", ranking);
                             dsArtSearch.updateObj(dataList.getDataObject(i));
-                            if (ranking > 5) {
+                            if (ranking > 5 && isAlreadyRecommeded) {
                                 newRecommended++;
                             }
                         }
@@ -146,26 +154,30 @@ public class Analizer {
      * ranking
      * @return ranking para el contenido de un articulo
      */
-    private static int calculateRanking(ArrayList<String> phrases, String abstractTxt) {
+    private static int calculateRanking(ArrayList<String> phrases, String abstractTxt, boolean isByUser) {
         Iterator it = phrases.iterator();
-        int c = 0;
+        int finalRanking = 0;
         int ranking = 0;
         while (it.hasNext()) {
             String phrase = it.next().toString();
-            if (abstractTxt.contains(phrase)) {
+            Pattern pattern = Pattern.compile("^" + Pattern.quote(phrase) + "\\W|\\W"
+                    + Pattern.quote(phrase) + "\\W|\\W" + Pattern.quote(phrase) + "$",
+                    Pattern.DOTALL + Pattern.CASE_INSENSITIVE);
+            if (pattern.matcher(abstractTxt).find()) {
                 ranking++;
-//                if (phrase.equals("prognosis")) {
-//                    c++;
-//                } else if (phrase.equals("prediction")) {
-//                    c++;
-//                } else if (phrase.equals("treatment")) {
-//                    c++;
-//                }
             }
-
         }
-        ranking = Math.round(((float) ranking / (float) (phrases.size() )) * 10);
-        return ranking;
+        if (isByUser) {
+            if (ranking > 0) {
+                finalRanking = ranking + 6;
+                if (finalRanking > 10) {
+                    finalRanking = 10;
+                }
+            }
+        } else {
+            finalRanking = Math.round(((float) ranking / (float) (phrases.size())) * 10);
+        }
+        return finalRanking;
     }
 
     /**
@@ -183,9 +195,9 @@ public class Analizer {
         try {
             SWBDataSource dsArtSearch = engine.getDataSource("Art_Search");
             DataObject datObjSearch = dsArtSearch.fetchObjById(artSearch);
-            ArrayList<String> phrases = Analizer.getGlossaryThresholdSearch(engine, idSearch);
+            ArrayList<String> phrases = Analizer.getGlossaryThresholdSearch(engine, idSearch, false, true);
             if (phrases.size() > 0) {
-                int ranking = Analizer.calculateRanking(phrases, abstractTxt);
+                int ranking = Analizer.calculateRanking(phrases, abstractTxt, false);
                 datObjSearch.put("ranking", ranking);
                 dsArtSearch.updateObj(datObjSearch);
                 if (ranking > 5) {
@@ -205,11 +217,26 @@ public class Analizer {
      * @param idSearch Identificador del esquema de busqueda
      * @return Arreglo con los keyword asociados a un esquema de busqueda
      */
-    private static ArrayList getGlossaryThresholdSearch(SWBScriptEngine engine, String idSearch) {
+    private static ArrayList getGlossaryThresholdSearch(SWBScriptEngine engine, String idSearch, boolean isAddByUser, boolean isUpdated) {
         ArrayList<String> phrases = new ArrayList<>();
         try {
             SWBDataSource dsAnalize = engine.getDataSource("Analize");
-            DataObject obj = Utils.ENG.getDataProperty(dsAnalize, new String[]{"search"}, new String[]{idSearch}, new String[]{"threshold"}, new int[]{1});
+            String[] properties;
+            int[] values;
+            if (isUpdated) {
+                properties = new String[]{"threshold"};
+                values = new int[]{1};
+            } else {
+                if (isAddByUser) {
+                    properties = new String[]{"threshold", "addByUser"};
+                    values = new int[]{1, 1};
+                } else {
+                    properties = new String[]{"threshold", "addByUser"};
+                    values = new int[]{1, 0};
+                }
+            }
+
+            DataObject obj = Utils.ENG.getDataProperty(dsAnalize, new String[]{"search"}, new String[]{idSearch}, properties, values);
             int rows = obj.getDataObject("response").getInt("totalRows");
             if (rows > 0) {
                 DataList dataList = obj.getDataObject("response").getDataList("data");
@@ -304,16 +331,14 @@ public class Analizer {
                             analizeObj.containsKey("threshold") ? analizeObj.getInt("threshold") : 0, analizeObj, dsAnalize)) {
                         calculateThreshold = true;
                     }
-                    if (analizeObj.containsKey("threshold") && analizeObj.getInt("threshold") == 1) {
-                        phrases.add(analizeObj.getString("key"));
-                    }
+//                    if (analizeObj.containsKey("threshold") && analizeObj.getInt("threshold") == 1) {
+//                        phrases.add(analizeObj.getString("key"));
+//                    }
                 }
+                phrases = Analizer.getGlossaryThresholdSearch(engine, idSearch, false, false);
 
-//                phrases.add("prognosis");
-//                phrases.add("treatment");
-//                phrases.add("prediction");
                 if (phrases.size() > 0 && calculateThreshold) {
-                    newRecommended = Analizer.reclassifyArticles(engine, idSearch, phrases);
+                    newRecommended = Analizer.reclassifyArticles(engine, idSearch, phrases, false);
                 }
             }
         } catch (IOException ex) {
@@ -324,8 +349,8 @@ public class Analizer {
 
     public static int userReclassifyArticle(String key, String idSearch) {
         SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
-        ArrayList<String> thresholdList = Analizer.getGlossaryThresholdSearch(engine, idSearch);
-        int reclassifyArticles = reclassifyArticles(engine, idSearch, thresholdList);
+        ArrayList<String> thresholdList = Analizer.getGlossaryThresholdSearch(engine, idSearch, true, false);
+        int reclassifyArticles = reclassifyArticles(engine, idSearch, thresholdList, true);
         return reclassifyArticles;
     }
 
