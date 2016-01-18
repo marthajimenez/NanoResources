@@ -342,10 +342,10 @@ public class Utils {
                 JSONObject art = arrOutstanding.getJSONObject(i);
 
                 int pmid = 0, pmc = 0;
-                if (art.has("pmid")) {
+                if (art.has("pmid") && !art.getString("pmid").equals("")) {
                     pmid = Integer.parseInt(art.getString("pmid"));
                 }
-                if (art.has("pmc")) {
+                if (art.has("pmc") && !art.getString("pmid").equals("")) {
                     pmc = Integer.parseInt(art.getString("pmc"));
                 }
                 int ranking = art.has("ranking") ? art.getInt("ranking") : null;
