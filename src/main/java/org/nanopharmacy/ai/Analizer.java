@@ -347,7 +347,7 @@ public class Analizer {
         return newRecommended;
     }
 
-    public static int userReclassifyArticle(String key, String idSearch) {
+    public static int userReclassifyArticle(String idSearch) {
         SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
         ArrayList<String> thresholdList = Analizer.getGlossaryThresholdSearch(engine, idSearch, true, false);
         int reclassifyArticles = reclassifyArticles(engine, idSearch, thresholdList, true);
