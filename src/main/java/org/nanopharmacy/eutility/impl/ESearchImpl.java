@@ -703,17 +703,17 @@ public class ESearchImpl {
 
         Date timeNow = new Date(System.currentTimeMillis());
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:SSz");
-        System.out.println("Inicia creacion de JSON: " + format.format(timeNow));
+//        System.out.println("Inicia creacion de JSON: " + format.format(timeNow));
         if (respRoot != null) {
-            System.out.println("Copiando elementos ...");
+//            System.out.println("Copiando elementos ...");
             for (Element articleList : (List<Element>) respRoot.getChildren()) {
                 
-                System.out.println(" ... Elemento: " + articleList.getName());
+//                System.out.println(" ... Elemento: " + articleList.getName());
                 for (Element pubmedArt : (List<Element>) articleList.getChildren("article")) {
                     recovered++;
                     pmid = pubmedArt.getChildText("pmid");
                     if (pmid != null && !pmid.isEmpty() && acceptedPubMed.indexOf(pmid) >= 0) {
-                        System.out.println("pmid repetido: " + pmid);
+//                        System.out.println("pmid repetido: " + pmid);
                         continue;
                     } else if (pmid != null && !pmid.isEmpty()) {
                         acceptedPubMed.append(pmid).append(",");
@@ -775,13 +775,13 @@ public class ESearchImpl {
                     
                     
             }
-            System.out.println(">>>>Fin de copiado");
+//            System.out.println(">>>>Fin de copiado");
 //                pubmedArtList = respRoot.getChildren("article");
         }
         doc = null;
-        System.out.println("total de recuperados = " + recovered);
-        System.out.println("total de no repetidos (xml) = " + accepted);
-        System.out.println("total de aceptados (json) = " + outstanding.length());
+//        System.out.println("total de recuperados = " + recovered);
+//        System.out.println("total de no repetidos (xml) = " + accepted);
+//        System.out.println("total de aceptados (json) = " + outstanding.length());
 
         try {
             if (!publications.has("error")) {
@@ -922,7 +922,7 @@ public class ESearchImpl {
             }
             
             if (count > 0) {
-                System.out.println("Articulos en busqueda PubMed: " + count);
+//                System.out.println("Articulos en busqueda PubMed: " + count);
                 spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PUBMED);
                 spec = spec.replaceFirst(Token_QryKEY, qryKey);
                 spec = spec.replaceFirst(Token_WebENV, webEnv);
@@ -1074,8 +1074,8 @@ public class ESearchImpl {
                         pubYear = null;
                         pubMonth = null;
                     }
-                    System.out.println("*** Sin abstract: " + sinAbstract);
-                    System.out.println("Con rank igual a cero: " + rankCero);
+//                    System.out.println("*** Sin abstract: " + sinAbstract);
+//                    System.out.println("Con rank igual a cero: " + rankCero);
                 } // if esummary
             }// if count > 0
         } // if esearch
@@ -1123,7 +1123,7 @@ public class ESearchImpl {
         spec = spec.replaceFirst(TOKEN_ALTMOL, getQueryValue(molecularAlt));
         spec = spec.replaceFirst(Token_DbNAME, dbName);
         spec = spec.replaceFirst(Token_GENE, geneName);
-        System.out.println("\nURL:\n" + spec);
+//        System.out.println("\nURL:\n" + spec);
         
         doc = this.getExternalData(spec);
         if (doc != null) {
@@ -1160,7 +1160,7 @@ public class ESearchImpl {
             }
             
             if (count > 0) {
-                System.out.println("\nArticulos en busqueda PMC: " + count);
+//                System.out.println("\nArticulos en busqueda PMC: " + count);
                 spec = CMD_EFetch.replaceFirst(Token_DbNAME, Db_PMC);
                 spec = spec.replaceFirst(Token_QryKEY, qryKey);
                 spec = spec.replaceFirst(Token_WebENV, webEnv);
@@ -1400,8 +1400,8 @@ public class ESearchImpl {
                                 Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, e);
                             }
                         } // for pubmedArt
-                        System.out.println("Articulos en XML PMC: " + articulosEnXML);
-                        System.out.println("Excluidos con rank cero: " + rankCero);
+//                        System.out.println("Articulos en XML PMC: " + articulosEnXML);
+//                        System.out.println("Excluidos con rank cero: " + rankCero);
                     } catch (Exception jde) {
                             Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, jde);
                         System.out.println("Ha ocurrido un error mientras se obtiene informacion de PMC: " + jde);
@@ -1523,7 +1523,7 @@ public class ESearchImpl {
         Document doc;
         URL cmd;
         HttpURLConnection conex = null;
-        System.out.println("\nURL:\n" + path);
+//        System.out.println("\nURL:\n" + path);
         cmd = new URL(path);
         try {
             conex = (HttpURLConnection) cmd.openConnection();

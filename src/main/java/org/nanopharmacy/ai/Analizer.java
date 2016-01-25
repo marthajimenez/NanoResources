@@ -123,7 +123,7 @@ public class Analizer {
                             if (dataList.getDataObject(i).getInt("ranking") > 5) {
                                 isAlreadyRecommeded = false;
                             }
-                            System.out.println("Ranking: " + ranking);
+//                            System.out.println("Ranking: " + ranking);
                             dataList.getDataObject(i).put("ranking", ranking);
                             dsArtSearch.updateObj(dataList.getDataObject(i));
                             if (ranking > 5 && isAlreadyRecommeded) {
@@ -278,13 +278,13 @@ public class Analizer {
             if (threshold == 0) { // No esta entre las frases aceptadas
                 if (percent > percentAccept) {
                     analizeObj.put("threshold", 1);
-                    System.out.println("Entro : " + analizeObj.getString("key"));
+//                    System.out.println("Entro : " + analizeObj.getString("key"));
                     dsAnalize.updateObj(analizeObj);
                     isTreshold = true;
                 }
             } else { // Esta entre las frases aceptadas
                 if (percent < percentReject && analizeObj.getInt("addByUser") == 0) {
-                    System.out.println("Salio : " + analizeObj.getString("key"));
+//                    System.out.println("Salio : " + analizeObj.getString("key"));
                     analizeObj.put("threshold", 0);
                     dsAnalize.updateObj(analizeObj);
                 }
