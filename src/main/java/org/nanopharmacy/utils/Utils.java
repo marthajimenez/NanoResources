@@ -42,12 +42,24 @@ import org.nanopharmacy.util.parser.html.HTMLParser;
  */
 public class Utils {
 
+    /** Almacena la ruta física del contexto de la aplicacion en el sistema de archivos del servidor
+        con el fin de ubicar facilmente los archivos de las imagenes mostradas en el carrusel */
     private static String contextPath;
 
+    /**
+     * Obtiene el valor almacenado de la ruta fisica del contexto de la aplicacion
+     * en el sistema de archivos del servidor.
+     * @return el objeto String que representa la ruta del contexto
+     */
     public static String getContextPath() {
         return contextPath;
     }
 
+    /**
+     * Almacena el valor de {@code contextPath} como la ruta fisica del contexto de la aplicacion
+     * en el sistema de archivos del servidor.
+     * @param contextPath {@code String} que representa la ruta fisica del contexto de la aplicacion
+     */
     public static void setContextPath(String contextPath) {
         Utils.contextPath = contextPath;
     }
@@ -67,6 +79,8 @@ public class Utils {
      *
      * @param text el abstract de la publicación. El texto del abstract de la
      * publicación o artículo.
+     * @param geneName el simbolo del gen en el esquema de busqueda.
+     * @param molecularAlt el simbolo de la alteracion molecular en el esquema de busqueda.
      * @return Un valor entero indicando la relevancia de la publicación. Un
      * valor 10 indica la mayor relevancia ya que menciona la alteración
      * molecular; 8 si el abstract del artículo no menciona la alteración
@@ -302,9 +316,9 @@ public class Utils {
         }
 
         /**
-         * 
-         * @param obj
-         * @return 
+         * Obtiene el conjunto de registros de base de datos contenidos en el {@code DataObject} recibido
+         * @param obj un {@code DataObject} del que se desea extraer los registros contenidos
+         * @return el conjunto de {@code DataObject} contenidos en el objeto recibido
          */
         public static Iterator<DataObject> getDataList(DataObject obj) {
             return obj.getDataObject("response").getDataList("data").iterator();
@@ -428,12 +442,10 @@ public class Utils {
         /**
          * Copia las relaciones de un esquema de busqueda existente a uno nuevo,
          * colocando todos los articulos como nuevos.
-         *
-         * @param newSearchId Identificador del nuevo esquema de busqueda
-         * (Search)
-         * @param localSearch Objeto con la informcacion del esquema de busquda
-         * a clonar.
-         * @return Una cadena con el numero de articulos recomendados y nuevos
+         * @param newSearchId identificador del nuevo esquema de busqueda (Search)
+         * @param localSearch objeto con la informacion del esquema de busquda a clonar.
+         * @param maxMonth numero de meses de los cuales se debe copiar la informacion
+         * @return una cadena con el numero de articulos recomendados y nuevos,
          * separados por una coma
          */
         public static String saveLocalNewArticles(String newSearchId, DataObject localSearch, int maxMonth) {
@@ -840,6 +852,10 @@ public class Utils {
          * ser&aacute; utilizada para la b&uacute;squeda de art&iacute;culos.
          * @param id Identificador de la b&uacute;squeda a la que ser&aacute;n
          * asociados los art&iacute;culos.
+         * @param geneId identificador del gen en el esquema de busqueda, se utiliza para 
+         * obtener los datos asociados a un esquema de busqueda que contenga este gen y {@code alterationId}
+         * @param alterationId identificador de la alteracion molecular en el esquema de busqueda, se utiliza para 
+         * obtener los datos asociados a un esquema de busqueda que contenga {@code geneId} y esta alteracion
          * @return Un arreglo JSON con el n&uacute;mero de elementos nuevos y
          * recomendados; o un error si hubo un problema al almacenar la
          * informaci&oacute;n.
@@ -995,6 +1011,10 @@ public class Utils {
             return isValid;
         }
 
+        /**
+         * Elimina todos los esquemas de busqueda asociados al usuario al que corresponde el identificador proporcionado
+         * @param userId identificador del usuario del que se desea eliminar la informacion asociada
+         */
         public static void removeUserData(String userId) {
             try {
                 SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
@@ -1019,6 +1039,12 @@ public class Utils {
             }
         }
 
+        /**
+         * Elimina de la base de datos, la informacion relacionada al esquema de busqueda que se
+         * ha solicitado eliminar, explicitamente la informacion de las tablas Art_Search, Report y Analize
+         * @param schemeId el identificador del esquema de busqueda que se solicito eliminar
+         * @return el valor entero cero
+         */
         public static int removeSchemeData(String schemeId) {
             try {
                 SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
@@ -1072,8 +1098,7 @@ public class Utils {
 
         /**
          * Remueve las im&aacute;genes del sistema de archivos.
-         *
-         * @param imageId Identificador de la imagen a eliminar.
+         * @param imageId identificador de la imagen a eliminar.
          */
         public static void removeImages(String imageId) {
             try {

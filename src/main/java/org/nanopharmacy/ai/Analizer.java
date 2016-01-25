@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nanopharmacy.ai;
 
 import java.io.IOException;
@@ -22,22 +17,22 @@ import org.semanticwb.datamanager.SWBDataSource;
 import org.semanticwb.datamanager.SWBScriptEngine;
 
 /**
- *
+ * Implementa un metodo de inteligencia artificial a traves del cual la aplicacion aprende y
+ * mejora la clasificacion de los articulos recomendados en terminos de las preferencias que
+ * manifiesta un usuario al aceptar articulos dentro de cada esquema de busqueda.
  * @author martha.jimenez
  */
 public class Analizer {
 
-    private static Stream<String> lines;
-
     /**
-     * Lee archivo txt de glosario y lo inserta en el datasource Glossary
-     *
-     * @param path Direccion fisica del archivo txt
+     * Lee archivo txt de glosario e inserta su contenido en el datasource Glossary
+     * @param path direccion fisica del archivo txt
      */
     public static void loadGlossary(String path) {
         SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
         final SWBDataSource dsGlossary = engine.getDataSource("Glossary");
         DataObject newGlossaryObj = new DataObject();
+        Stream<String> lines;
         try {
             lines = Files.lines(Paths.get(path));
             Iterator<String> iterator = lines.iterator();
@@ -46,7 +41,7 @@ public class Analizer {
                 newGlossaryObj.put("key", iterator.next());
                 //newGlossaryObj.put("definition", "");
                 dsGlossary.addObj(newGlossaryObj);
-
+                
             }
         } catch (IOException ex) {
             Logger.getLogger(Analizer.class.getName()).log(Level.SEVERE, null, ex);
@@ -55,8 +50,7 @@ public class Analizer {
 
     /**
      * Retorna iterador con las frases del glosario
-     *
-     * @return Retorna objeto Iterator<DataObject>
+     * @return Retorna objeto Iterator<DataObject> que contiene las frases del glosario
      */
     public static Iterator<DataObject> getGlossaryList() {
         Iterator<DataObject> dataList = null;
@@ -74,9 +68,8 @@ public class Analizer {
     /**
      * Analiza el abstract de un articulo para encontrar ocurrencias de las
      * frases existentes en el glosario.
-     *
-     * @param idSearch Identificador de la busquedad
-     * @param idArticle Identificador del articulo
+     * @param idSearch identificador del esquema de busqueda al que esta asociado el articulo
+     * @param idArticle identificador del articulo del que se va a analizar el abstract
      */
     public static int analizer(String idSearch, String idArticle) {
         int newRecommended = 0;
@@ -97,11 +90,12 @@ public class Analizer {
     }
 
     /**
-     * Califica la relevancia de los ariculos en base a las phases aceptadas
-     *
-     * @param engine Engine.
-     * @param idSearch Identificador de la busqueda actual.
-     * @param phrases Lista de frases aceptadas.
+     * Califica la relevancia de los articulos en base a las frases aceptadas
+     * @param engine maquina de scripts proporcionada por SemanticWebBuilder
+     * @param idSearch identificador del esquema de busqueda del que se desea calificar sus articulos
+     * @param phrases lista de frases aceptadas como keywords para evaluar los abstracts de los articulos
+     * @param isByUser indica si los esquemas de busqueda se asocian a los usuarios que los crean o no
+     * @return el numero de articulos considerados {@literal recomendados} con base a la calificacion asignada.
      */
     public static int reclassifyArticles(SWBScriptEngine engine, String idSearch, ArrayList<String> phrases, boolean isByUser) {
         int newRecommended = 0;
@@ -146,13 +140,13 @@ public class Analizer {
     }
 
     /**
-     * Determina el ranking del contenido de un abstract en un articulo.
-     *
-     * @param phrases Arreglo del conjunto de frases que han aparecido en un
+     * Determina el ranking del contenido de un abstract representado por {@code abstractTxt}.
+     * @param phrases arreglo del conjunto de frases que han aparecido como de interes en un
      * esquema de busqueda
-     * @param abstractTxt Texto del abstract para el cual se determinara el
-     * ranking
-     * @return ranking para el contenido de un articulo
+     * @param abstractTxt texto del abstract para el cual se determinara el ranking
+     * @param isByUser indica si los esquemas de busqueda se asocian a los usuarios que los crean, o no
+     * @return un valor entero que representa el ranking correspondiente al texto proporcionado,
+     * en base a las {@code phrases} especificadas. El valor devuelto cumple con lo siguiente: 0 >= valorDevuelto <= 10
      */
     private static int calculateRanking(ArrayList<String> phrases, String abstractTxt, boolean isByUser) {
         Iterator it = phrases.iterator();
@@ -181,14 +175,15 @@ public class Analizer {
     }
 
     /**
-     * Obtiene el ranking para un articulo de acuerdo a la aparición de uno o
-     * mas keyword
-     *
-     * @param engine Engine
-     * @param idSearch Identificador del esquema de busqueda
-     * @param abstractTxt Contenido del abstract de un articulo
-     * @param artSearch Identificador del registro que contiene la frase
-     * @return Un valor numerico de 1 que indica si el articulo es recomendado
+     * Ejecuta el calculo del ranking para un articulo de acuerdo a la aparicion de uno o
+     * mas keywords y determina si dicho articulo se considera recomendado o no, con base en el
+     * valor del ranking obtenido
+     * @param engine maquina de scripts proporcionada por SemanticWebBuilder
+     * @param idSearch identificador del esquema de busqueda al que esta asociado el articulo
+     * @param abstractTxt contenido del abstract de un articulo
+     * @param artSearch identificador del registro que contiene la relacion entre el esquema 
+     *        de busqueda y el articulo que contiene el abstract
+     * @return un entero cuyo valor es 1 si el articulo es recomendado, o 0 si no es recomendado
      */
     public static int getUpdateArticleRanking(SWBScriptEngine engine, String idSearch, String abstractTxt, String artSearch) {
         int recommended = 0;
@@ -211,32 +206,38 @@ public class Analizer {
     }
 
     /**
-     * Obtiene el glosario de keyword que tiene un esquema de busqueda
-     *
-     * @param engine Engine.
-     * @param idSearch Identificador del esquema de busqueda
-     * @return Arreglo con los keyword asociados a un esquema de busqueda
+     * Obtiene el listado de keywords en específico para un esquema de busqueda en particular
+     * @param engine la maquina de scripts proporcionada por SemanticWebBuilder.
+     * @param idSearch identificador del esquema de busqueda del que se desea obtener los keywords
+     * @param isAddByUser si es {@code true} indica que los keywods devueltos son las frases que 
+     *        el usuario agregó al glosario y que actualmente tienen estatus de keyword
+     * @param isUpdated si es {@code true} indica que las cadenas devueltas son terminos existentes 
+     *        en el glosario que actualmente tienen estatus de keyword
+     * @return {@code ArrayList<String>} con los keywords asociados al esquema de busqueda indicado
      */
-    private static ArrayList getGlossaryThresholdSearch(SWBScriptEngine engine, String idSearch, boolean isAddByUser, boolean isUpdated) {
+    private static ArrayList getGlossaryThresholdSearch(SWBScriptEngine engine, String idSearch,
+            boolean isAddByUser, boolean isUpdated) {
+        
         ArrayList<String> phrases = new ArrayList<>();
         try {
             SWBDataSource dsAnalize = engine.getDataSource("Analize");
             String[] properties;
             int[] values;
             if (isUpdated) {
-                properties = new String[]{"threshold"};
-                values = new int[]{1};
+                properties = new String[] {"threshold"};
+                values = new int[] {1};
             } else {
                 if (isAddByUser) {
-                    properties = new String[]{"threshold", "addByUser"};
-                    values = new int[]{1, 1};
+                    properties = new String[] {"threshold", "addByUser"};
+                    values = new int[] {1, 1};
                 } else {
-                    properties = new String[]{"threshold", "addByUser"};
-                    values = new int[]{1, 0};
+                    properties = new String[] {"threshold", "addByUser"};
+                    values = new int[] {1, 0};
                 }
             }
 
-            DataObject obj = Utils.ENG.getDataProperty(dsAnalize, new String[]{"search"}, new String[]{idSearch}, properties, values);
+            DataObject obj = Utils.ENG.getDataProperty(dsAnalize, new String[] {"search"},
+                             new String[] {idSearch}, properties, values);
             int rows = obj.getDataObject("response").getInt("totalRows");
             if (rows > 0) {
                 DataList dataList = obj.getDataObject("response").getDataList("data");
@@ -258,17 +259,17 @@ public class Analizer {
     /**
      * Determina si una frase del glosario para una busqueda en especifico se
      * convierte en frase keyword
-     *
      * @param totalArtsAccept total de articulos aceptados en una busqueda
      * @param frequency n&uacute;mero de veces que se ha detectado la frase
      * @param threshold bandera que permite definir el umbral de una frase
-     * @param analizeObj Registro que contiene la frase
-     * @param dsAnalize Tabla de la BD que contiene la frecuencia de aparicion
-     * de las frases en una busqueda
-     * @return un boolean si la frase ha pasado el umbral para ser considerada
-     * como keyword
+     * @param analizeObj registro que contiene la frase
+     * @param dsAnalize tabla de la BD que contiene la frecuencia de aparici&oacute;n
+     * de las frases en una b&uacute;squeda
+     * @return {@code true} si la frase ha pasado el umbral para ser considerada
+     * como keyword, {@code false} de lo contrario
      */
-    private static boolean calculateThreshold(int totalArtsAccept, int frequency, int threshold, DataObject analizeObj, SWBDataSource dsAnalize) {
+    private static boolean calculateThreshold(int totalArtsAccept, int frequency, int threshold,
+            DataObject analizeObj, SWBDataSource dsAnalize) {
         boolean isTreshold = false;
         float percentAccept = 0.66F;
         float percentReject = 0.51F;
@@ -295,13 +296,12 @@ public class Analizer {
     }
 
     /**
-     * Analiza el abstract de un articulo, incrementa las apariciones de una
+     * Analiza el abstract de un articulo, incrementa el contador de las apariciones de una
      * frase, determina si alguna frase se convierte en un keyword para
      * reclasificar los articulos que tienen estatus de nuevo.
-     *
-     * @param engine Engine
-     * @param abstractTxt Representa el abstract de un articulo
-     * @param idSearch Identificador de un esquema de busqueda
+     * @param engine la maquina de scripts provista por SemanticWebBuilder
+     * @param abstractTxt representa el abstract de un articulo
+     * @param idSearch identificador de un esquema de busqueda
      */
     public static int analizeAbstract(SWBScriptEngine engine, String abstractTxt, String idSearch) {
         int newRecommended = 0;
@@ -347,7 +347,14 @@ public class Analizer {
         return newRecommended;
     }
 
-    public static int userReclassifyArticle(String idSearch) {
+    /**
+     * Ejecuta la calificacion de los articulos asociados a un esquema de busqueda con base en el conjunto
+     * de keywords actuales con el fin de aumentar el numero de articulos recomendados.
+     * @param idSearch identificador del esquema de busqueda del que se desea modificar la 
+     *        calificacion de los articulos relacionados
+     * @return el numero de articulos clasificados como recomendados asociados al esquema de busqueda
+     */
+    public static int userReclassifyArticle(String key, String idSearch) {
         SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
         ArrayList<String> thresholdList = Analizer.getGlossaryThresholdSearch(engine, idSearch, true, false);
         int reclassifyArticles = reclassifyArticles(engine, idSearch, thresholdList, true);
@@ -356,12 +363,11 @@ public class Analizer {
 
     /**
      * Incrementa las ocurrencias de una frase en un esquema de busqueda.
-     *
      * @param dsAnalize SWBDataSource de la tabla que contiene las frases que
      * ocurren en una busqueda
-     * @param s Representa la frase que sera incrementada en las ocurrencias de
+     * @param s representa la frase que sera incrementada en las ocurrencias de
      * una busqueda
-     * @param idSearch Identificador del esquema de busqueda
+     * @param idSearch identificador del esquema de busqueda
      */
     private static void increaseFrequency(SWBDataSource dsAnalize, String s, String idSearch) {
         try {
@@ -390,11 +396,10 @@ public class Analizer {
     }
 
     /**
-     * Analiza el abstract de un articulo para decrementar ocurrencias de las
-     * frases existentes en el glosario de una busqueda.
-     *
-     * @param idSearch Identificador de la busquedad
-     * @param idArticle Identificador del articulo
+     * Analiza el abstract de un articulo para decrementar el contador de las ocurrencias de las
+     * frases existentes en el glosario de un esquema de busqueda.
+     * @param idSearch identificador del esquema de busqueda asociado al articulo
+     * @param idArticle identificador del articulo cuyo abstract tiene que analizarse
      */
     public static void analyzeRejected(String idSearch, String idArticle) {
         try {
