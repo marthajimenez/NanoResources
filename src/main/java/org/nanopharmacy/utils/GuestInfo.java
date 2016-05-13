@@ -59,7 +59,7 @@ public class GuestInfo extends HttpServlet {
         
         boolean infoSaved = false;
         String path = Utils.getContextPath();
-        File file = new File(path + "/../" + this.FILENAME);
+        File file = new File(path + "/../files/" + this.FILENAME);
         System.out.println("Archivo: " + file.getAbsolutePath());
         FileWriter writer = null;
         
@@ -89,7 +89,6 @@ public class GuestInfo extends HttpServlet {
                 textLine.append(comment2Write);
                 textLine.append("\"\n");
                 writer.append(textLine);
-                System.out.println("Se almaceno en archivo:\n" + textLine.toString());
             }
             writer.flush();
             writer.close();

@@ -844,8 +844,8 @@ public class Utils {
          * relacionados a un gen, una alteraci&oacute;n molecular y un
          * n&uacute;mero de años en espec&iacute;fico
          *
-         * @param artYearsOld N&uacute;mero de años que ser&aacute; utilizado
-         * para la b&uacute;squeda de art&iacute;culos.
+         * @param artYearsOld meses que ser&aacute;n utilizados
+         * para la b&uacute;squeda de art&iacute;culos. Al inicio de la aplicacion se usaban a&ntilde;os
          * @param gene S&iacute;mbolo del gen que ser&aacute; utilizado para la
          * b&uacute;squeda de art&iacute;culos.
          * @param altMolecular Nombre de la alteraci&oacute;n molecular que
@@ -872,14 +872,17 @@ public class Utils {
          * est&aacute; esperando, para dormir, o de lo contrario ocupada, y el
          * hilo se interrumpe, ya sea antes o durante la actividad.
          */
-        public static JSONObject getPublication(int artYearsOld, String gene, String altMolecular, String id, String geneId, String alterationId)
+        public static JSONObject getPublication(int artYearsOld, String gene,
+                String altMolecular, String id, String geneId, String alterationId)
                 throws NoDataException, UseHistoryException, ProtocolException, IOException, InterruptedException {
+            
             ESearchImpl esearch = new ESearchImpl();
             JSONObject obj = new JSONObject();
             int monthInc = 6;
-            int months = artYearsOld * 12;
+            int months = artYearsOld;
             int tmpNotification = 0;
             int tmpRecommended = 0;
+//            System.out.println("artYearsOld: " + artYearsOld);
             SWBScriptEngine engine = DataMgr.getUserScriptEngine("/public/NanoSources.js", null, false);
             SWBDataSource ds = engine.getDataSource("Search");
             DataObject existSearch = getDataProperty(ds, new String[]{"gene", "altMolecular"}, new String[]{geneId, alterationId}, null, null);
@@ -888,6 +891,7 @@ public class Utils {
             DataObject tmpSearch = null, tmpSearchLow = null, tmpSearchUp = null;
             boolean getExternalPblications = true;
             int yearLow = 0, yearUp = 100, init = 0;
+            
             for (int i = 0; i < list.size(); i++) {
                 DataObject search = list.getDataObject(i);
                 if (!search.getString("_id").equals(id)) {
@@ -920,7 +924,7 @@ public class Utils {
                 init = months;
             } else if (tmpSearchLow != null) {
                 finalTmpSearch = tmpSearchLow;
-                init = yearLow * 12;
+                init = yearLow;// * 12
             }
 
             if (finalTmpSearch != null) {

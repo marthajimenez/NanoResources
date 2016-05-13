@@ -478,7 +478,7 @@ public class ESearchImpl {
                 respRoot = doc.getRootElement();
                 res = respRoot.getChild("DocumentSummarySet");
                 if (res == null) {
-                    throw new NoDataException("No se encontro el elemento DocumentSummarySet para el gen " + geneName);
+                    //throw new NoDataException("No se encontro el elemento DocumentSummarySet para el gen " + geneName);
                 }
             } // if esummary
         } // if esearch
@@ -568,14 +568,14 @@ public class ESearchImpl {
             String qryKey, webEnv;
             elem = respRoot.getChild(ESearchImpl.Elem_QryKEY);
             if (elem == null) {
-                System.out.println("no se encontro el valor de: queryKey");
+//                System.out.println("no se encontro el valor de: queryKey");
                 throw new UseHistoryException("no se encontro el valor de: queryKey");
             }
             qryKey = elem.getValue();
 
             elem = respRoot.getChild(ESearchImpl.Elem_WebENV);
             if (elem == null) {
-                System.out.println("no se encontro el valor de: WebEnv=");
+//                System.out.println("no se encontro el valor de: WebEnv=");
                 throw new UseHistoryException("no se encontro el valor de: WebEnv=");
             }
             webEnv = elem.getValue();
@@ -583,7 +583,7 @@ public class ESearchImpl {
             idList = respRoot.getChild("IdList").getChildren("Id");
             doc = null;
             if (qryKey == null || webEnv == null) {
-                System.out.println("Entrez no devolvio queryKey ni WebEnv");
+//                System.out.println("Entrez no devolvio queryKey ni WebEnv");
                 throw new UseHistoryException("Entrez no devolvio queryKey ni WebEnv");
             }
             spec = CMD_ESummaryL.replaceFirst(Token_DbNAME, Db_GTR);
@@ -595,7 +595,7 @@ public class ESearchImpl {
                 respRoot = doc.getRootElement();
                     elem = respRoot.getChild("DocumentSummarySet");
                     if (elem == null) {
-                        System.out.println("no se encontraro el elemento DocumentSummarySet para el gen " + geneName);
+//                        System.out.println("no se encontraro el elemento DocumentSummarySet para el gen " + geneName);
                         throw new NoDataException("no se encontraron elementos DocumentSummary para el gen " + geneName);
                     }
                     
@@ -665,7 +665,7 @@ public class ESearchImpl {
                 doc = getPublicationsDom(geneName, molecularAlt, ellapsedYears, ellapsedDays, initMonth, finalMonth);
                 respRoot = doc.getRootElement();
             } else {
-                System.out.println("Periodo de busqueda mal definido");
+//                System.out.println("Periodo de busqueda mal definido");
                 throw new NoDataException("Periodo de busqueda mal definido");
             }
         } catch (NoDataException nde) {
@@ -673,7 +673,7 @@ public class ESearchImpl {
             errorData.put("error", ESearchImpl.ERROR_INFO_NOT_FOUND);
             errorData.put("msg", "No data for your search");
             publications.put("error", errorData);
-            System.out.println("No data for your search: " + nde);
+//            System.out.println("No data for your search: " + nde);
             doc = null;
             Logger.getLogger(ESearchImpl.class.getName()).log(Level.SEVERE, null, nde);
         } catch (IOException ioe) {
@@ -881,6 +881,7 @@ public class ESearchImpl {
         spec = spec.replaceFirst(TOKEN_ALTMOL, getQueryValue(molecularAlt));
         spec = spec.replaceFirst(Token_DbNAME, dbName);
         spec = spec.replaceFirst(Token_GENE, geneName);
+//        System.out.println("\nPubMed URL:\n" + spec);
         doc = this.getExternalData(spec);
         
         if (doc != null) {
@@ -1123,7 +1124,7 @@ public class ESearchImpl {
         spec = spec.replaceFirst(TOKEN_ALTMOL, getQueryValue(molecularAlt));
         spec = spec.replaceFirst(Token_DbNAME, dbName);
         spec = spec.replaceFirst(Token_GENE, geneName);
-//        System.out.println("\nURL:\n" + spec);
+//        System.out.println("\nPMC URL:\n" + spec);
         
         doc = this.getExternalData(spec);
         if (doc != null) {
