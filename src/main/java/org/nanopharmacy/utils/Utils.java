@@ -755,11 +755,13 @@ public class Utils {
                         //Si existe devuelve el identificador 
                         idDisease = newDisease.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
                     }
-                    //Asocia la enfermedad al Gen
-                    DataObject newGeneCancer = new DataObject();
-                    newGeneCancer.put("gene", idGene);
-                    newGeneCancer.put("cancer", idDisease);
-                    dsGeneCancer.addObj(newGeneCancer);
+                    if (idGene != null && idDisease != null) {
+                        //Asocia la enfermedad al Gen
+                        DataObject newGeneCancer = new DataObject();
+                        newGeneCancer.put("gene", idGene);
+                        newGeneCancer.put("cancer", idDisease);
+                        dsGeneCancer.addObj(newGeneCancer);
+                    }
                 }
             }
         }
@@ -816,6 +818,7 @@ public class Utils {
                         newDisease = ds.addObj(newDisease);
                         idDisease = newDisease.getDataObject("response").getDataObject("data").getString("_id");
                     } else {
+                        //Si ya existe la enfermedad pero no ha sido asociada al Gen
                         //Si la enfermedad existe, obtiene su identificador de la consulta a la tabla de Enfermedades
                         idDisease = newDisease.getDataObject("response").getDataList("data").getDataObject(0).getString("_id");
 
@@ -824,6 +827,17 @@ public class Utils {
                         String[] propertiesValues = {idDisease, idGene};
                         DataObject obj1 = getDataProperty(dsGeneCancer, propertiesName, propertiesValues, null, null);
                         rows = obj1.getDataObject("response").getInt("totalRows");
+                        
+                        newDisease = new DataObject();
+                        newDisease.put("name", title);
+                        newDisease.put("summary", definition);
+                        newDisease.put("conceptId", conceptId);
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                        String date = sdf.format(new Date());
+                        newDisease.put("lastUpdate", date);
+                        //Actualiza los d
+                        ds.updateObj(newDisease);
+                        
                         if (rows > 0) {
                             continue;
                         }
